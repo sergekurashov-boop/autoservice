@@ -1,0 +1,360 @@
+/* assets/css/auth.css - УВЕЛИЧЕННАЯ ВЕРСИЯ */
+.auth-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #FFFFE0 0%, #FFF8DC 50%, #FFFAF0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.auth-card {
+    background: #fffef5;
+    border: 2px solid #d4c49e;
+    border-radius: 8px; /* Добавим немного скругления */
+    padding: 3rem;
+    width: 100%;
+    max-width: 600px; /* УВЕЛИЧИЛИ ДО 600px */
+    box-shadow: 0 8px 32px rgba(92, 74, 0, 0.15);
+    position: relative;
+}
+
+/* Демо-режим: делаем форму еще шире для демо-информации */
+.auth-card-wide {
+    max-width: 700px; /* ЕЩЕ ШИРЕ для демо */
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.auth-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.auth-title {
+    color: #8b6914;
+    font-size: 2rem; /* Увеличили заголовок */
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    color: #8b6914;
+    font-size: 1.1rem; /* Чуть больше подзаголовок */
+    opacity: 0.8;
+}
+
+.auth-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.auth-label {
+    display: block;
+    color: #8b6914;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    font-size: 1rem; /* Чуть больше labels */
+}
+
+.auth-input {
+    width: 100%;
+    padding: 1rem 1.25rem; /* Увеличили padding */
+    border: 1px solid #d4c49e;
+    background: #fffdf5;
+    color: #5c4a00;
+    font-size: 1.1rem; /* Увеличили шрифт */
+    border-radius: 6px; /* Легкое скругление */
+    transition: all 0.3s ease;
+    height: 54px; /* Фиксированная высота */
+    box-sizing: border-box;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: #8b6914;
+    background: #fffef5;
+    box-shadow: 0 0 0 3px rgba(139, 105, 20, 0.15); /* Усилили тень */
+    transform: translateY(-2px);
+}
+
+.auth-input::placeholder {
+    color: #b0a47c;
+    font-size: 1rem;
+}
+
+.auth-btn {
+    width: 100%;
+    padding: 1.25rem; /* Увеличили кнопки */
+    background: #8b6914;
+    color: white;
+    border: none;
+    font-size: 1.2rem; /* Увеличили шрифт кнопок */
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    height: 60px; /* Фиксированная высота */
+}
+
+.auth-btn:hover {
+    background: #7a5a10;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(139, 105, 20, 0.3);
+}
+
+.auth-btn-secondary {
+    width: 100%;
+    padding: 1.25rem;
+    background: #28a745;
+    color: white;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    margin-top: 0.5rem;
+    height: 60px;
+}
+
+.auth-btn-secondary:hover {
+    background: #218838;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+}
+
+/* НОВЫЕ СТИЛИ ДЛЯ ДЕМО-РЕЖИМА */
+.demo-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    text-align: center;
+}
+
+.demo-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.demo-feature {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e6d8a8;
+}
+
+.auth-link {
+    color: #8b6914;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    font-size: 1rem;
+}
+
+.auth-link:hover {
+    color: #5c4a00;
+    text-decoration: underline;
+}
+
+.auth-message-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem 1.25rem;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 1.5rem;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.auth-message-success {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem 1.25rem;
+    border: 1px solid #c3e6cb;
+    margin-bottom: 1.5rem;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.auth-info-box {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    color: #004085;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.auth-security-info {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.auth-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.auth-requirements {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.5rem;
+}
+
+/* Анимации */
+@keyframes authFadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(30px) scale(0.95); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+    }
+}
+
+.auth-card {
+    animation: authFadeIn 0.6s ease-out;
+}
+
+/* Эффект при наведении на всю карточку */
+.auth-card:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .auth-card {
+        max-width: 90%;
+        padding: 2rem 1.5rem;
+    }
+    
+    .auth-card-wide {
+        max-width: 95%;
+    }
+    
+    .auth-title {
+        font-size: 1.7rem;
+    }
+    
+    .auth-input {
+        padding: 0.875rem 1rem;
+        height: 50px;
+        font-size: 1rem;
+    }
+    
+    .auth-btn, .auth-btn-secondary {
+        padding: 1rem;
+        height: 55px;
+        font-size: 1.1rem;
+    }
+    
+    .demo-features {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 1rem;
+    }
+    
+    .auth-card {
+        padding: 1.5rem 1rem;
+        max-width: 100%;
+    }
+    
+    .auth-title {
+        font-size: 1.5rem;
+    }
+    
+    .auth-input {
+        padding: 0.75rem 0.875rem;
+        height: 48px;
+    }
+    
+    .auth-btn, .auth-btn-secondary {
+        padding: 0.875rem;
+        height: 52px;
+        font-size: 1rem;
+    }
+}
+
+/* Дополнительные эффекты для тренировки */
+.auth-input-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.auth-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8b6914;
+    font-size: 1.2rem;
+}
+
+.auth-input-with-icon {
+    padding-left: 3rem !important;
+}
+
+/* Эффект загрузки для кнопок */
+.auth-btn-loading {
+    position: relative;
+    color: transparent;
+}
+
+.auth-btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
