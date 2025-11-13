@@ -1,70 +1,46 @@
 <?php
-$page_title = "Резервные копии";
-include 'header.php';
+session_start();
+require_once '../includes/db.php';
+
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+    die('❌ Доступ только для администраторов');
+}
+
+// Логика бэкапов будет здесь
 ?>
 
-<div class="content-container">
-    <div class="header-actions">
-        <h1 class="page-title">💾 Резервные копии</h1>
-        <form method="POST" style="display: inline;">
-            <button type="submit" name="create_backup" class="btn-1c primary">🔄 Создать backup</button>
-        </form>
-    </div>
-
-    <div class="row-1c">
-        <div class="card-1c">
-            <div class="card-header-1c">
-                <h5>Создание резервной копии</h5>
-            </div>
-            <div class="card-content">
-                <p>Создайте резервную копию базы данных и файлов системы.</p>
-                <ul>
-                    <li>База данных: autoservice</li>
-                    <li>Файлы конфигурации</li>
-                    <li>Загруженные документы</li>
-                </ul>
-            </div>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Резервные копии</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .card { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 10px 0; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💾 Резервные копии</h1>
+        
+        <div class="card">
+            <h3>Создание резервной копии</h3>
+            <p>Создайте полную резервную копию базы данных</p>
+            <button class="btn btn-success">🔄 Создать бэкап</button>
         </div>
-
-        <div class="card-1c">
-            <div class="card-header-1c">
-                <h5>Существующие копии</h5>
-            </div>
-            <div class="card-content">
-                <div class="alert-1c info">
-                    📁 Папка с backup: <strong>/backups/</strong>
-                </div>
-                <div class="backup-list">
-                    <div class="backup-item">
-                        <span>backup_2024_01_15.sql</span>
-                        <span>15.01.2024 14:30</span>
-                        <span>2.5 MB</span>
-                        <a href="#" class="btn-1c">📥</a>
-                    </div>
-                    <div class="backup-item">
-                        <span>backup_2024_01_14.sql</span>
-                        <span>14.01.2024 14:30</span>
-                        <span>2.4 MB</span>
-                        <a href="#" class="btn-1c">📥</a>
-                    </div>
-                </div>
-            </div>
+        
+        <div class="card">
+            <h3>Восстановление из копии</h3>
+            <p>Восстановите систему из резервной копии</p>
+            <button class="btn btn-warning">📥 Восстановить</button>
         </div>
+        
+        <p><a href="user_management.php">← К пользователям</a></p>
     </div>
-</div>
-
-<style>
-.backup-item {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
-    gap: 1rem;
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-    align-items: center;
-}
-.backup-item:last-child {
-    border-bottom: none;
-}
-</style>
-
-<?php include 'footer.php'; ?>
+</body>
+</html>

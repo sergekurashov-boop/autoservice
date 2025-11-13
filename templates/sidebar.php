@@ -97,10 +97,10 @@
                 <span class="accordion-icon-1c">▼</span>
             </div>
             <div class="accordion-content-1c" id="admin-menu">
-                <a href="/autoservice/admin/user_management.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'user_management.php' ? 'active' : '' ?>">
+                <a href="/autoservice/user_management.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'user_management.php' ? 'active' : '' ?>">
                     👨‍💼 Управление пользователями
                 </a>
-                <a href="/autoservice/admin/backup.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'backup.php' ? 'active' : '' ?>">
+                <a href="/autoservice/backup.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'backup.php' ? 'active' : '' ?>">
                     💾 Резервные копии
                 </a>
                 <a href="/autoservice/admin/logs.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'logs.php' ? 'active' : '' ?>">

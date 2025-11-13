@@ -1,13 +1,15 @@
 <?php
 // auth_check.php
 
-// Используем существующий файл подключения к БД
-require_once 'includes/db.php';
+// Начинаем сессию если еще не начата
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Функция для проверки, авторизован ли пользователь
 function requireAuth() {
     if (!isset($_SESSION['user_id'])) {
-        header('Location: login.php');
+        header('Location: /autoservice/login.php');
         exit;
     }
 }
@@ -17,8 +19,8 @@ function requireRole($requiredRole) {
     requireAuth();
     
     if ($_SESSION['user_role'] !== $requiredRole) {
-        http_response_code(403);
-        die('Доступ запрещен. Недостаточно прав.');
+        header('Location: /autoservice/unauthorized.php');
+        exit;
     }
 }
 
@@ -27,20 +29,22 @@ function requireAnyRole($allowedRoles) {
     requireAuth();
     
     if (!in_array($_SESSION['user_role'], $allowedRoles)) {
-        http_response_code(403);
-        die('Доступ запрещен. Недостаточно прав.');
+        header('Location: /autoservice/unauthorized.php');
+        exit;
     }
 }
 
 // Функция для получения информации о текущем пользователе
 function getCurrentUser() {
-    global $pdo;
+    global $conn; // Исправлено: было $pdo, стало $conn
     
     if (!isset($_SESSION['user_id'])) {
         return null;
     }
     
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
-    return $stmt->fetch();
+    $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->bind_param("i", $_SESSION['user_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_assoc();
 }
