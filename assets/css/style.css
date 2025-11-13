@@ -1438,3 +1438,437 @@ body {
         font-size: 0.8rem;
     }
 }
+/* СТИЛИ ДЛЯ СИСТЕМЫ ПОМОЩИ */
+.help-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #fffef5;
+    border: 1px solid #e6d8a8;
+    box-shadow: 0 2px 8px rgba(92, 74, 0, 0.1);
+}
+
+.help-header {
+    text-align: center;
+    margin-bottom: 40px;
+    border-bottom: 2px solid #e6d8a8;
+    padding-bottom: 20px;
+}
+
+.help-description {
+    color: #8b6914;
+    font-size: 1.1rem;
+    margin-top: 10px;
+}
+
+.help-content {
+    line-height: 1.7;
+}
+
+.help-section {
+    background: #fffef5;
+    padding: 25px;
+    margin-bottom: 20px;
+    border: 1px solid #e6d8a8;
+    border-left: 4px solid #8b6914;
+}
+
+.help-section h2 {
+    color: #5c4a00;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.help-section h3 {
+    color: #8b6914;
+    margin: 20px 0 10px 0;
+    font-size: 1.1rem;
+}
+
+.help-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #fff8dc;
+    border: 1px solid #e6d8a8;
+}
+
+.feature-icon {
+    font-size: 1.5rem;
+    min-width: 40px;
+}
+
+.feature-content {
+    flex: 1;
+}
+
+.feature-content h4 {
+    color: #5c4a00;
+    margin-bottom: 5px;
+}
+
+.help-steps {
+    margin: 15px 0;
+    padding-left: 20px;
+}
+
+.help-steps li {
+    margin-bottom: 8px;
+    color: #5c4a00;
+}
+
+.help-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #e6d8a8;
+}
+
+.help-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.help-links span {
+    color: #8b6914;
+}
+
+.help-links a {
+    color: #8b6914;
+    text-decoration: none;
+    padding: 5px 10px;
+    border: 1px solid #e6d8a8;
+    background: #fff8dc;
+}
+
+.help-links a:hover {
+    background: #f5e8b0;
+    text-decoration: none;
+}
+
+/* Блоки с предупреждениями и советами */
+.help-note {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    padding: 15px;
+    margin: 15px 0;
+    border-left: 4px solid #ffc107;
+}
+
+.help-warning {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 15px;
+    margin: 15px 0;
+    border-left: 4px solid #dc3545;
+}
+
+.help-tip {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    padding: 15px;
+    margin: 15px 0;
+    border-left: 4px solid #17a2b8;
+}
+/* Дополнительные стили для помощи */
+.help-keyboard {
+    background: #fff8dc;
+    border: 1px solid #e6d8a8;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.help-code {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: "Courier New", monospace;
+    font-size: 0.9rem;
+    margin: 10px 0;
+    overflow-x: auto;
+}
+
+.help-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    background: #fffef5;
+}
+
+.help-table th {
+    background: #fff8dc;
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #e6d8a8;
+    font-weight: 600;
+    color: #5c4a00;
+}
+
+.help-table td {
+    padding: 10px;
+    border: 1px solid #e6d8a8;
+    color: #5c4a00;
+}
+
+/* Адаптивность для помощи */
+@media (max-width: 768px) {
+    .help-container {
+        padding: 15px;
+        margin: 10px;
+    }
+    
+    .help-section {
+        padding: 15px;
+    }
+    
+    .help-feature {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .feature-icon {
+        text-align: center;
+    }
+    
+    .help-navigation {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .help-links {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .help-container {
+        padding: 10px;
+    }
+    
+    .help-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .help-section h2 {
+        font-size: 1.2rem;
+    }
+}
+/* СТИЛИ ДЛЯ КОМПАКТНОЙ СИСТЕМЫ ПОМОЩИ */
+.help-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.help-card {
+    display: flex;
+    align-items: center;
+    background: #fffef5;
+    border: 1px solid #e6d8a8;
+    padding: 15px;
+    text-decoration: none;
+    color: #5c4a00;
+    transition: all 0.3s ease;
+    border-left: 4px solid #8b6914;
+    gap: 12px;
+}
+
+.help-card:hover {
+    background: #fcf5d9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(92, 74, 0, 0.15);
+    text-decoration: none;
+    color: #5c4a00;
+}
+
+.help-card-icon {
+    font-size: 1.8rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+.help-card-content {
+    flex: 1;
+}
+
+.help-card-content h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    color: #5c4a00;
+}
+
+.help-card-content p {
+    font-size: 0.8rem;
+    color: #8b6914;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.help-card-arrow {
+    color: #8b6914;
+    font-weight: bold;
+    font-size: 1.1rem;
+    opacity: 0.7;
+}
+
+/* Быстрые ссылки */
+.help-quick-links {
+    margin: 30px 0;
+    padding: 20px;
+    background: #fff8dc;
+    border: 1px solid #e6d8a8;
+}
+
+.help-quick-links h3 {
+    font-size: 1rem;
+    margin-bottom: 15px;
+    color: #5c4a00;
+}
+
+.quick-links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.quick-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background: #fffef5;
+    border: 1px solid #e6d8a8;
+    text-decoration: none;
+    color: #5c4a00;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.quick-link:hover {
+    background: #f5e8b0;
+    text-decoration: none;
+    color: #5c4a00;
+}
+
+.quick-link-icon {
+    font-size: 1rem;
+}
+
+/* Поиск по помощи */
+.help-search {
+    margin: 25px 0;
+    padding: 20px;
+    background: #fffef5;
+    border: 1px solid #e6d8a8;
+}
+
+.help-search h3 {
+    font-size: 1rem;
+    margin-bottom: 15px;
+    color: #5c4a00;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    max-width: 500px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #e6d8a8;
+    background: #fffef5;
+    color: #5c4a00;
+    font-size: 0.9rem;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #8b6914;
+}
+
+.search-btn {
+    padding: 10px 20px;
+    background: #8b6914;
+    color: white;
+    border: 1px solid #7a5a10;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s ease;
+}
+
+.search-btn:hover {
+    background: #7a5a10;
+}
+
+/* Адаптивность для карточек */
+@media (max-width: 768px) {
+    .help-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .help-card {
+        padding: 12px;
+    }
+    
+    .help-card-icon {
+        font-size: 1.5rem;
+        min-width: 35px;
+    }
+    
+    .help-card-content h3 {
+        font-size: 0.9rem;
+    }
+    
+    .help-card-content p {
+        font-size: 0.75rem;
+    }
+    
+    .quick-links-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .search-box {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .help-cards-grid {
+        gap: 10px;
+    }
+    
+    .help-card {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .help-card-icon {
+        font-size: 1.3rem;
+        min-width: 30px;
+    }
+    
+    .quick-links-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .help-quick-links,
+    .help-search {
+        padding: 15px;
+    }
+}

@@ -38,46 +38,6 @@ if (!$order) {
     die("Заказ не найден");
 }
 
-// Создаем таблицу company_details если её нет
-$conn->query("
-    CREATE TABLE IF NOT EXISTS company_details (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        company_name VARCHAR(255) NOT NULL,
-        legal_name VARCHAR(255),
-        inn VARCHAR(20),
-        kpp VARCHAR(20),
-        ogrn VARCHAR(20),
-        legal_address TEXT,
-        actual_address TEXT,
-        phone VARCHAR(50),
-        email VARCHAR(100),
-        website VARCHAR(255),
-        bank_name VARCHAR(255),
-        bank_account VARCHAR(50),
-        corr_account VARCHAR(50),
-        bic VARCHAR(20),
-        director_name VARCHAR(255),
-        accountant_name VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-");
-
-// Получаем реквизиты компании
-$company_details = [];
-try {
-    $result = $conn->query("SELECT * FROM company_details ORDER BY id DESC LIMIT 1");
-    if ($result && $result->num_rows > 0) {
-        $company_details = $result->fetch_assoc();
-        echo "<!-- Company details found: " . print_r($company_details, true) . " -->";
-    } else {
-        echo "<!-- No company details found in database -->";
-    }
-} catch (Exception $e) {
-    error_log("Error fetching company details: " . $e->getMessage());
-    echo "<!-- Error: " . $e->getMessage() . " -->";
-}
-
 // Получаем услуги из JSON
 $order_services = [];
 if (!empty($order['services_data']) && $order['services_data'] != 'null') {
@@ -138,11 +98,6 @@ foreach ($order_parts as $part) {
             font-weight: bold;
             margin-bottom: 5px;
         }
-        .company-details {
-            font-size: 11px;
-            margin-bottom: 10px;
-            line-height: 1.3;
-        }
         .document-title { 
             font-size: 16px; 
             font-weight: bold;
@@ -169,18 +124,6 @@ foreach ($order_parts as $part) {
             padding: 10px;
             border-radius: 4px;
         }
-        .company-block {
-            border: 1px solid #333;
-            padding: 15px;
-            margin-bottom: 20px;
-            background: #f9f9f9;
-        }
-        .company-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            font-size: 11px;
-        }
         table { 
             width: 100%; 
             border-collapse: collapse;
@@ -202,9 +145,6 @@ foreach ($order_parts as $part) {
         }
         .text-center { 
             text-align: center;
-        }
-        .text-left { 
-            text-align: left;
         }
         .totals { 
             margin-top: 20px;
@@ -240,11 +180,6 @@ foreach ($order_parts as $part) {
             margin-top: 40px;
             padding-top: 5px;
         }
-        .bank-details {
-            font-size: 10px;
-            line-height: 1.2;
-            margin-top: 5px;
-        }
         @media print {
             body { margin: 0; }
             .container { padding: 10mm; }
@@ -254,76 +189,12 @@ foreach ($order_parts as $part) {
 </head>
 <body>
     <div class="container">
-        <!-- Шапка документа с реквизитами компании -->
+        <!-- Шапка документа -->
         <div class="header">
-            <?php if (!empty($company_details['company_name'])): ?>
-                <div class="company-name"><?= htmlspecialchars($company_details['company_name']) ?></div>
-            <?php else: ?>
-                <div class="company-name">Автосервис</div>
-                <div class="company-details" style="color: #666; font-style: italic;">
-                    Для добавления реквизитов перейдите в Панель управления → Реквизиты компании
-                </div>
-            <?php endif; ?>
-            
-            <?php if (!empty($company_details['legal_name'])): ?>
-                <div class="company-details"><?= htmlspecialchars($company_details['legal_name']) ?></div>
-            <?php endif; ?>
-            
-            <?php if (!empty($company_details['legal_address']) || !empty($company_details['inn'])): ?>
-            <div class="company-grid">
-                <div class="text-left">
-                    <?php if (!empty($company_details['legal_address'])): ?>
-                        <div>Юр. адрес: <?= htmlspecialchars($company_details['legal_address']) ?></div>
-                    <?php endif; ?>
-                    <?php if (!empty($company_details['actual_address'])): ?>
-                        <div>Факт. адрес: <?= htmlspecialchars($company_details['actual_address']) ?></div>
-                    <?php endif; ?>
-                    <?php if (!empty($company_details['phone'])): ?>
-                        <div>Тел: <?= htmlspecialchars($company_details['phone']) ?></div>
-                    <?php endif; ?>
-                </div>
-                <div class="text-left">
-                    <?php if (!empty($company_details['inn'])): ?>
-                        <div>ИНН: <?= htmlspecialchars($company_details['inn']) ?></div>
-                    <?php endif; ?>
-                    <?php if (!empty($company_details['kpp'])): ?>
-                        <div>КПП: <?= htmlspecialchars($company_details['kpp']) ?></div>
-                    <?php endif; ?>
-                    <?php if (!empty($company_details['ogrn'])): ?>
-                        <div>ОГРН: <?= htmlspecialchars($company_details['ogrn']) ?></div>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <?php endif; ?>
-            
+            <div class="company-name">Автосервис </div>
             <div class="document-title">ЗАКАЗ-НАРЯД #<?= $order_id ?></div>
             <div>Дата создания: <?= date('d.m.Y H:i', strtotime($order['created'])) ?></div>
         </div>
-
-        <!-- Банковские реквизиты -->
-        <?php if (!empty($company_details['bank_name']) || !empty($company_details['bank_account'])): ?>
-        <div class="company-block">
-            <div style="font-weight: bold; margin-bottom: 8px;">Банковские реквизиты:</div>
-            <div class="company-grid">
-                <div class="text-left">
-                    <?php if (!empty($company_details['bank_name'])): ?>
-                        <div>Банк: <?= htmlspecialchars($company_details['bank_name']) ?></div>
-                    <?php endif; ?>
-                    <?php if (!empty($company_details['bank_account'])): ?>
-                        <div>Р/с: <?= htmlspecialchars($company_details['bank_account']) ?></div>
-                    <?php endif; ?>
-                </div>
-                <div class="text-left">
-                    <?php if (!empty($company_details['corr_account'])): ?>
-                        <div>К/с: <?= htmlspecialchars($company_details['corr_account']) ?></div>
-                    <?php endif; ?>
-                    <?php if (!empty($company_details['bic'])): ?>
-                        <div>БИК: <?= htmlspecialchars($company_details['bic']) ?></div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
 
         <!-- Информация о клиенте и автомобиле -->
         <div class="info-grid">
@@ -448,17 +319,13 @@ foreach ($order_parts as $part) {
         <div class="signatures">
             <div>
                 <div>Исполнитель:</div>
-                <?php if (!empty($company_details['director_name'])): ?>
-                    <div style="margin-top: 5px; font-size: 11px;"><?= htmlspecialchars($company_details['director_name']) ?></div>
-                <?php endif; ?>
                 <div class="signature-line"></div>
-                <div class="text-center">(подпись)</div>
+                <div class="text-center">(подпись, ФИО)</div>
             </div>
             <div>
                 <div>Клиент:</div>
-                <div style="margin-top: 5px; font-size: 11px;"><?= htmlspecialchars($order['client_name']) ?></div>
                 <div class="signature-line"></div>
-                <div class="text-center">(подпись)</div>
+                <div class="text-center">(подпись, ФИО)</div>
             </div>
         </div>
 

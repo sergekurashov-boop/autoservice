@@ -1,5 +1,5 @@
 <?php
-// order_edit.php
+// order_edit_with_parts_check.php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -37,6 +37,30 @@ $order = $result->fetch_assoc();
 if (!$order) {
     die("Заказ не найден");
 }
+
+// ПРОВЕРКА НЕВЫДАННЫХ ЗАПЧАСТЕЙ
+$pending_parts_sql = "
+    SELECT COUNT(*) as pending_count 
+    FROM order_parts 
+    WHERE order_id = ? AND issue_status = 'reserved' AND source_type = 'service_warehouse'
+";
+$pending_stmt = $conn->prepare($pending_parts_sql);
+$pending_stmt->bind_param("i", $order_id);
+$pending_stmt->execute();
+$pending_result = $pending_stmt->get_result()->fetch_assoc();
+$pending_parts_count = $pending_result['pending_count'] ?? 0;
+
+// Получаем детали невыданных запчастей для уведомления
+$pending_details_sql = "
+    SELECT op.part_id, p.name, op.quantity 
+    FROM order_parts op 
+    JOIN parts p ON op.part_id = p.id 
+    WHERE op.order_id = ? AND op.issue_status = 'reserved' AND op.source_type = 'service_warehouse'
+";
+$pending_details_stmt = $conn->prepare($pending_details_sql);
+$pending_details_stmt->bind_param("i", $order_id);
+$pending_details_stmt->execute();
+$pending_parts_details = $pending_details_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Функция для миграции старых данных в JSON
 function migrateOrderData($conn, $order_id) {
@@ -168,6 +192,15 @@ if ($parts_result) {
 
 // Обработка POST-запросов
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // ПРОВЕРКА ПРИ ИЗМЕНЕНИИ СТАТУСА НА "ГОТОВ" ИЛИ "ВЫДАН"
+    if (isset($_POST['update_order']) && in_array($_POST['status'], ['Готов', 'Выдан'])) {
+        if ($pending_parts_count > 0) {
+            $_SESSION['error'] = "Невозможно завершить заказ! Имеются невыданные запчасти со склада.";
+            header("Location: order_edit.php?id=" . $order_id);
+            exit;
+        }
+    }
+    
     // Добавление услуги
     if (isset($_POST['add_service'])) {
         $service_id = (int)$_POST['service_id'];
@@ -366,7 +399,7 @@ include 'templates/header.php';
     <title>Редактирование заказа #<?= $order_id ?></title>
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/icons/bootstrap-icons/font/bootstrap-icons.css">
-	<style>
+    <style>
     body {
         background-color: #FFE4B5;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -405,12 +438,35 @@ include 'templates/header.php';
     .border.rounded {
         background: white;
     }
-</style>
     
+    .pending-warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+    </style>
 </head>
 <body>
     <div class="container mt-4">
-       
+        <!-- УВЕДОМЛЕНИЕ О НЕВЫДАННЫХ ЗАПЧАСТЯХ -->
+        <?php if ($pending_parts_count > 0 && in_array($order['status'], ['В ожидании', 'В работе'])): ?>
+        <div class="pending-warning">
+            <h5><i class="bi bi-exclamation-triangle text-warning me-2"></i>Внимание!</h5>
+            <p class="mb-2">В заказе имеются <strong><?= $pending_parts_count ?></strong> невыданных запчастей со склада:</p>
+            <ul class="mb-2">
+                <?php foreach ($pending_parts_details as $part): ?>
+                <li><?= htmlspecialchars($part['name']) ?> (<?= $part['quantity'] ?> шт.)</li>
+                <?php endforeach; ?>
+            </ul>
+            <p class="mb-0">Для завершения заказа необходимо выдать все запчасти со склада.</p>
+            <a href="order_parts_management.php?order_id=<?= $order_id ?>" class="btn btn-warning btn-sm mt-2">
+                <i class="bi bi-box-seam me-1"></i> Перейти к управлению запчастями
+            </a>
+        </div>
+        <?php endif; ?>
         
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Редактирование заказа #<?= $order_id ?></h1>
@@ -418,27 +474,12 @@ include 'templates/header.php';
                 <a href="orders.php" class="btn btn-outline-secondary me-2">
                     <i class="bi bi-arrow-left"></i> Назад
                 </a>
+                <a href="order_parts_management.php?order_id=<?= $order_id ?>" class="btn btn-outline-info me-2">
+                    <i class="bi bi-box-seam"></i> Управление запчастями
+                </a>
                 <a href="order_print.php?id=<?= $order_id ?>" class="btn btn-outline-primary me-2" target="_blank">
                     <i class="bi bi-printer"></i> Печать
                 </a>
-				<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Редактирование заказа #<?= $order_id ?></h1>
-    <div>
-        <a href="orders.php" class="btn btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left"></i> Назад
-        </a>
-        <!-- ДОБАВИТЬ ЭТУ КНОПКУ -->
-        <a href="order_parts_management.php?order_id=<?= $order_id ?>" class="btn btn-outline-info me-2">
-            <i class="bi bi-box-seam"></i> Управление запчастями
-        </a>
-        <a href="order_print.php?id=<?= $order_id ?>" class="btn btn-outline-primary me-2" target="_blank">
-            <i class="bi bi-printer"></i> Печать
-        </a>
-        <button type="submit" form="orderForm" name="update_order" class="btn btn-success">
-            <i class="bi bi-check-lg"></i> Сохранить
-        </button>
-    </div>
-</div>
                 <button type="submit" form="orderForm" name="update_order" class="btn btn-success">
                     <i class="bi bi-check-lg"></i> Сохранить
                 </button>
@@ -531,12 +572,18 @@ include 'templates/header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Статус</label>
-                        <select name="status" class="form-control">
+                        <select name="status" class="form-control" <?= $pending_parts_count > 0 ? 'onchange="checkPendingParts(this)"' : '' ?>>
                             <option value="В ожидании" <?= $order['status'] == 'В ожидании' ? 'selected' : '' ?>>В ожидании</option>
                             <option value="В работе" <?= $order['status'] == 'В работе' ? 'selected' : '' ?>>В работе</option>
                             <option value="Готов" <?= $order['status'] == 'Готов' ? 'selected' : '' ?>>Готов</option>
                             <option value="Выдан" <?= $order['status'] == 'Выдан' ? 'selected' : '' ?>>Выдан</option>
                         </select>
+                        <?php if ($pending_parts_count > 0): ?>
+                        <div class="form-text text-warning">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            При смене статуса на "Готов" или "Выдан" система проверит невыданные запчасти
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -779,7 +826,7 @@ include 'templates/header.php';
         </div>
     </div>
 
-   
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
     <script>
         // Обновление цены при выборе услуги
         document.querySelector('select[name="service_id"]').addEventListener('change', function() {
@@ -788,7 +835,17 @@ include 'templates/header.php';
                 document.querySelector('input[name="price"]').value = selectedOption.getAttribute('data-price');
             }
         });
+
+        // Проверка невыданных запчастей при смене статуса
+        function checkPendingParts(select) {
+            const newStatus = select.value;
+            if (newStatus === 'Готов' || newStatus === 'Выдан') {
+                if (!confirm('Внимание! В заказе есть невыданные запчасти со склада. Вы уверены, что хотите завершить заказ?')) {
+                    select.value = '<?= $order['status'] ?>';
+                }
+            }
+        }
     </script>
-	<?php include 'templates/footer.php'; ?>
+    <?php include 'templates/footer.php'; ?>
 </body>
 </html>

@@ -1,8 +1,6 @@
 <!-- Сайдбар в стиле 1С -->
 <div class="sidebar-1c" id="mainSidebar">
-    <button class="sidebar-toggle-1c" id="sidebarToggle">
-        ‹
-    </button>
+    <button class="sidebar-toggle-1c" id="sidebarToggle">‹</button>
     
     <div class="sidebar-header-1c">
         <h5>🛠️ <span>AUTOSERVICE</span></h5>
@@ -16,6 +14,33 @@
             <span class="menu-text">Главная</span>
         </a>
         
+        <!-- 🔹 АККОРДЕОН ЗАКАЗЫ -->
+        <div class="accordion-1c">
+            <div class="accordion-header-1c" data-accordion="orders">
+                <span class="sidebar-icon-1c">📋</span>
+                <span class="menu-text">Заказы</span>
+                <span class="accordion-icon-1c">▼</span>
+            </div>
+            <div class="accordion-content-1c" id="orders-menu">
+                <a href="/autoservice/orders.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'orders.php' ? 'active' : '' ?>">
+                    📝 Все заказы
+                </a>
+                <a href="/autoservice/create_order.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'create_order.php' ? 'active' : '' ?>">
+                    ➕ Новый заказ
+                </a>
+                <a href="/autoservice/orders.php?status=active" class="sidebar-subitem-1c">
+                    🔧 В работе
+                </a>
+                <a href="/autoservice/orders.php?status=completed" class="sidebar-subitem-1c">
+                    ✅ Выполненные
+                </a>
+                <!-- Будет добавляться позже -->
+                <a href="/autoservice/inspection.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'inspection.php' ? 'active' : '' ?>" style="display: none;">
+                    🔍 Осмотр авто
+                </a>
+            </div>
+        </div>
+        
         <!-- Аккордеон Управление -->
         <div class="accordion-1c">
             <div class="accordion-header-1c" data-accordion="management">
@@ -24,9 +49,6 @@
                 <span class="accordion-icon-1c">▼</span>
             </div>
             <div class="accordion-content-1c" id="management-menu">
-                <a href="/autoservice/orders.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'orders.php' ? 'active' : '' ?>">
-                    📋 Заказы
-                </a>
                 <a href="/autoservice/clients.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'clients.php' ? 'active' : '' ?>">
                     👥 Клиенты
                 </a>
@@ -88,26 +110,55 @@
             <span class="menu-text">Отчеты</span>
         </a>
 
+        <!-- 🔹 АККОРДЕОН ПОМОЩЬ (НОВЫЙ) -->
+        <div class="accordion-1c">
+            <div class="accordion-header-1c" data-accordion="help">
+                <span class="sidebar-icon-1c">❓</span>
+                <span class="menu-text">Помощь</span>
+                <span class="accordion-icon-1c">▼</span>
+            </div>
+            <div class="accordion-content-1c" id="help-menu">
+                <a href="/autoservice/help.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help.php' ? 'active' : '' ?>">
+                    📖 Помощь по программе
+                </a>
+                <a href="/autoservice/help_quickstart.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_quickstart.php' ? 'active' : '' ?>">
+                    🚀 Быстрый старт
+                </a>
+                <a href="/autoservice/help_orders.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_orders.php' ? 'active' : '' ?>">
+                    📋 Работа с заказами
+                </a>
+                <a href="/autoservice/help_warehouse.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_warehouse.php' ? 'active' : '' ?>">
+                    🏭 Управление складом
+                </a>
+                <a href="/autoservice/help_reports.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_reports.php' ? 'active' : '' ?>">
+                    📈 Формирование отчетов
+                </a>
+                <a href="/autoservice/help_troubleshooting.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_troubleshooting.php' ? 'active' : '' ?>">
+                    🔧 Решение проблем
+                </a>
+            </div>
+        </div>
+
         <!-- 🔹 АДМИНИСТРИРОВАНИЕ (только для админов) -->
         <?php if ($_SESSION['user_role'] === 'admin'): ?>
         <div class="accordion-1c">
             <div class="accordion-header-1c" data-accordion="admin">
-                <span class="sidebar-icon-1c">⚙️</span>
+                <span class="sidebar-icon-1c">🔐</span>
                 <span class="menu-text">Администрирование</span>
                 <span class="accordion-icon-1c">▼</span>
             </div>
             <div class="accordion-content-1c" id="admin-menu">
-                <a href="/autoservice/user_management.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'user_management.php' ? 'active' : '' ?>">
-                    👨‍💼 Управление пользователями
+                <a href="/autoservice/admin.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'admin.php' ? 'active' : '' ?>">
+                    ⚙️ Настройки системы
                 </a>
-                <a href="/autoservice/backup.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'backup.php' ? 'active' : '' ?>">
-                    💾 Резервные копии
+                <a href="/autoservice/users.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'users.php' ? 'active' : '' ?>">
+                    👥 Пользователи
                 </a>
-                <a href="/autoservice/admin/logs.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'logs.php' ? 'active' : '' ?>">
+                <a href="/autoservice/system_logs.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'system_logs.php' ? 'active' : '' ?>">
                     📊 Логи системы
                 </a>
-                <a href="/autoservice/admin/settings.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : '' ?>">
-                    ⚙️ Настройки системы
+                <a href="/autoservice/backup.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'backup.php' ? 'active' : '' ?>">
+                    💾 Резервное копирование
                 </a>
             </div>
         </div>
@@ -130,6 +181,7 @@
             <strong>8</strong>
         </div>
     </div>
+
     <!-- 🔹 СТАТУС СИСТЕМЫ И ПОЛЬЗОВАТЕЛЬ -->
     <div class="sidebar-footer-1c">
         <!-- Статус системы -->
@@ -188,3 +240,36 @@
         </div>
     </div>
 </div>
+
+<script>
+// Активация пункта "Осмотр авто" когда открыта страница осмотра
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPage = '<?= basename($_SERVER['PHP_SELF']) ?>';
+    
+    // Показываем пункт "Осмотр авто" если открыта страница осмотра
+    if (currentPage === 'inspection.php') {
+        const inspectionLink = document.querySelector('a[href="/autoservice/inspection.php"]');
+        if (inspectionLink) {
+            inspectionLink.style.display = 'block';
+        }
+    }
+    
+    // Автоматически раскрываем аккордеон Заказы если открыта связанная страница
+    const orderPages = ['orders.php', 'create_order.php', 'inspection.php', 'order_edit.php'];
+    if (orderPages.includes(currentPage)) {
+        const ordersAccordion = document.querySelector('[data-accordion="orders"]');
+        if (ordersAccordion) {
+            ordersAccordion.click();
+        }
+    }
+    
+    // Автоматически раскрываем аккордеон Помощь если открыта страница помощи
+    const helpPages = ['help.php', 'help_quickstart.php', 'help_orders.php', 'help_warehouse.php', 'help_reports.php', 'help_troubleshooting.php'];
+    if (helpPages.includes(currentPage)) {
+        const helpAccordion = document.querySelector('[data-accordion="help"]');
+        if (helpAccordion) {
+            helpAccordion.click();
+        }
+    }
+});
+</script>
