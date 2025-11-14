@@ -47,10 +47,195 @@ try {
     die("❌ Ошибка базы данных: " . $e->getMessage());
 }
 
-$page_title = "Печать заказа шиномонтажа #" . $order_id;
-include 'templates/header.php';
+// Устанавливаем заголовки для печати
+header('Content-Type: text/html; charset=utf-8');
 ?>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Заказ-наряд шиномонтажа #<?= $order_id ?></title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 10px;
+            background: white;
+            color: black;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        .print-container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 2px solid #000;
+            padding: 15px;
+        }
+        .company-header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        .company-header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .company-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 10px;
+        }
+        .document-header {
+            text-align: center;
+            margin: 15px 0;
+            padding: 8px;
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+        }
+        .document-header h2 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .section {
+            margin-bottom: 10px;
+            border: 1px solid #000;
+            padding: 8px;
+        }
+        .section-title {
+            background: #e9e9e9;
+            padding: 4px 8px;
+            margin: -8px -8px 6px -8px;
+            border-bottom: 1px solid #ccc;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        .two-columns {
+            display: flex;
+            gap: 15px;
+            margin-top: 4px;
+        }
+        .column {
+            flex: 1;
+        }
+        .tire-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .tire-position {
+            border: 1px solid #000;
+            padding: 5px;
+            background: #f9f9f9;
+            font-size: 10px;
+        }
+        .tire-title {
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 2px;
+            margin-bottom: 2px;
+            font-size: 9px;
+        }
+        .services-list {
+            margin-top: 6px;
+        }
+        .service-item {
+            padding: 1px 0;
+            font-size: 10px;
+        }
+        .signature-area {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature {
+            text-align: center;
+            width: 200px;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 30px;
+            padding-top: 2px;
+            height: 15px;
+        }
+        .signature-info {
+            font-size: 9px;
+            margin-top: 3px;
+        }
+        .footer {
+            margin-top: 15px;
+            border-top: 1px solid #000;
+            padding-top: 6px;
+            text-align: center;
+            font-size: 8px;
+            color: #666;
+        }
+        .barcode {
+            text-align: center;
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+            font-size: 10px;
+        }
+        .stamp-area {
+            position: absolute;
+            right: 20px;
+            bottom: 100px;
+            width: 100px;
+            height: 100px;
+            border: 2px dashed #000;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+        }
+        
+        /* Автоматически запускаем печать */
+        @media print {
+            body { margin: 0; padding: 5px; }
+            .print-container { border: none; padding: 10px; }
+        }
+    </style>
+</head>
+<body onload="window.print(); setTimeout(window.close, 1000);">
+    <div class="print-container">
+        <!-- Шапка компании -->
+        <div class="company-header">
+            <h1><?= htmlspecialchars($company['company_name'] ?? 'AUTOSERVICE') ?></h1>
+            <div style="font-size: 12px; margin-top: 3px;">Автосервис и шиномонтаж</div>
+        </div>
 
+        <!-- Реквизиты компании -->
+        <div class="company-info">
+            <div>
+                <?php if (!empty($company['actual_address'])): ?>
+                    <strong>Адрес:</strong> <?= htmlspecialchars($company['actual_address']) ?><br>
+                <?php endif; ?>
+                <?php if (!empty($company['phone'])): ?>
+                    <strong>Телефон:</strong> <?= htmlspecialchars($company['phone']) ?>
+                <?php endif; ?>
+            </div>
+            <div style="text-align: right;">
+                <?php if (!empty($company['inn'])): ?>
+                    <strong>ИНН:</strong> <?= htmlspecialchars($company['inn']) ?><br>
+                <?php endif; ?>
+                <?php if (!empty($company['bank_account'])): ?>
+                    <strong>Р/с:</strong> <?= htmlspecialchars($company['bank_account']) ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Заголовок документа -->
+        <div class="document-header">
+            <h2>ЗАКАЗ-НАРЯД № <?= $order_id ?></h2>
+            <div>от <?= date('d.m.Y', strtotime($order['created_at'])) ?></div>
+        </div>
 <div class="main-content">
     <div class="container">
         <div class="page-header">
@@ -287,3 +472,7 @@ include 'templates/header.php';
 </style>
 
 <?php include 'templates/footer.php'; ?>
+
+    </div>
+</body>
+</html>
