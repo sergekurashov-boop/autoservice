@@ -40,7 +40,25 @@
                 </a>
             </div>
         </div>
-        
+        <!-- 🔹 АККОРДЕОН ШИНОМОНТАЖ -->
+<div class="accordion-1c">
+    <div class="accordion-header-1c" data-accordion="tire">
+        <span class="sidebar-icon-1c">🛞</span>
+        <span class="menu-text">Шиномонтаж</span>
+        <span class="accordion-icon-1c">▼</span>
+    </div>
+    <div class="accordion-content-1c" id="tire-menu">
+        <a href="/autoservice/tire_orders.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'tire_orders.php' ? 'active' : '' ?>">
+            📋 Заказы шиномонтажа
+        </a>
+        <a href="/autoservice/tire_create.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'tire_create.php' ? 'active' : '' ?>">
+            ➕ Новый заказ-наряд
+        </a>
+        <a href="/autoservice/tire_stats.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'tire_stats.php' ? 'active' : '' ?>">
+            📊 Статистика шиномонтажа
+        </a>
+    </div>
+</div>
         <!-- Аккордеон Управление -->
         <div class="accordion-1c">
             <div class="accordion-header-1c" data-accordion="management">
