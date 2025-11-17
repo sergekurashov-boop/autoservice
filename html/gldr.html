@@ -1,0 +1,181 @@
+<?php
+// 1. Подключение конфигурации и проверка авторизации
+require_once 'config.php';
+
+session_start();
+
+// Включаем шапку с навбаром
+define('ACCESS', true);
+include 'templates/header.php';
+?>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Политика конфиденциальности [Название автосервиса]</title>
+	
+</head>
+<body>
+</head>
+<body>
+
+</div>
+    <h1>ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ</h1>
+    <p>Дата вступления в силу: [Дата]</p>
+
+    <h2>1. Общие положения</h2>
+    <p>Автосервис "[Название]", ИНН [номер], расположенный по адресу: [Адрес], обязуется защищать персональные данные клиентов в соответствии с ФЗ-152 "О персональных данных".</p>
+
+    <h2>2. Какие данные мы собираем</h2>
+    <ul>
+        <li><strong>Данные клиента:</strong> ФИО, контактный телефон, email, адрес</li>
+        <li><strong>Данные автомобиля:</strong> VIN, гос. номер, марка/модель, год выпуска</li>
+        <li><strong>Документы:</strong> копии ПТС/СТС (только для заказа запчастей)</li>
+        <li><strong>Финансовые данные:</strong> реквизиты платежных карт (обрабатываются платежным шлюзом)</li>
+        <li><strong>Техническая информация:</strong> история ремонтов, диагностические коды ошибок</li>
+    </ul>
+
+    <h2>3. Цели обработки данных</h2>
+    <ul>
+        <li>Заключение и исполнение договора на обслуживание</li>
+        <li>Информирование о статусе ремонта</li>
+        <li>Напоминание о ТО и акциях</li>
+        <li>Бухгалтерский учет и документооборот</li>
+        <li>Анализ качества услуг</li>
+    </ul>
+
+    <h2>4. Правовые основания</h2>
+    <p>Обработка осуществляется на основании:
+        <ul>
+            <li>Статья 6 ФЗ-152 (исполнение договора)</li>
+            <li>Письменного согласия клиента</li>
+        </ul>
+    </p>
+
+    <h2>5. Хранение и защита</h2>
+    <ul>
+        <li>Срок хранения: 5 лет после окончания обслуживания</li>
+        <li>Меры защиты: шифрование, защищенные серверы, ограниченный доступ</li>
+        <li>Данные автомобиля хранятся отдельно от персональных данных клиента</li>
+    </ul>
+
+    <h2>6. Передача третьим лицам</h2>
+    <p>Данные могут передаваться только:
+        <ul>
+            <li>Партнерам по гарантийному обслуживанию</li>
+            <li>Официальным дилерам для заказа специфичных запчастей</li>
+            <li>Платежным системам (без доступа к полным данным карт)</li>
+            <li>По требованию государственных органов</li>
+        </ul>
+    </p>
+
+    <h2>7. Права клиентов</h2>
+    <p>Клиент вправе:
+        <ul>
+            <li>Запросить доступ к своим данным</li>
+            <li>Потребовать исправления</li>
+            <li>Отозвать согласие на обработку</li>
+            <li>Удалить данные (кроме требуемых по закону)</li>
+        </ul>
+        Контакты для запросов: [email/телефон DPO]
+    </p>
+
+    <h2>8. Особые категории данных</h2>
+    <p>Мы <strong>не собираем</strong>:
+        <ul>
+            <li>Биометрические данные</li>
+            <li>Медицинскую информацию</li>
+            <li>Данные о местоположении в реальном времени</li>
+        </ul>
+    </p>
+
+    <h2>9. Cookies и сайт</h2>
+    <p>На сайте используются только технические cookies для:
+        <ul>
+            <li>Авторизации в личном кабинете</li>
+            <li>Сохранения истории запросов</li>
+            <li>Аналитики посещаемости (без персональных данных)</li>
+        </ul>
+    </p>
+
+    <h2>10. Изменения в политике</h2>
+    <p>Все изменения публикуются на сайте не менее чем за 10 дней до вступления в силу</p>
+
+    <h2>Контактная информация</h2>
+    <p>[Должность ответственного лица] <br>
+    Телефон: [номер] <br>
+    Email: [адрес] <br>
+    Адрес: [юридический адрес]</p>
+	<!-- Футер с вертикальным градиентом -->
+<footer class="footer-gradient py-4 mt-5">
+  <div class="container text-center">
+   
+	<!-- Футер -->
+        <footer class="footer">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h5 style="color: var(--gold-primary);">
+                            <i class="bi bi-car-front-fill"></i> AUTOSERVICE
+                        </h5>
+                        <p>Профессиональная система управления автосервисом премиум-класса</p>
+                        <div class="social-links mt-3">
+                            <a href="#" class="me-3"><i class="bi bi-instagram" style="color: var(--gold-secondary);"></i></a>
+                            <a href="#" class="me-3"><i class="bi bi-facebook" style="color: var(--gold-secondary);"></i></a>
+                            <a href="#" class="me-3"><i class="bi bi-telegram" style="color: var(--gold-secondary);"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 style="color: var(--gold-primary);">Контакты</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="bi bi-geo-alt-fill me-2" style="color: var(--gold-secondary);"></i> СССР</li>
+                            <li class="mb-2"><i class="bi bi-telephone-fill me-2" style="color: var(--gold-secondary);"></i> +7 (952) 798-23-29</li>
+                            <li><i class="bi bi-envelope-fill me-2" style="color: var(--gold-secondary);"></i> info@autoservice.ru</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <h6 style="color: var(--gold-primary);">&copy; <?= date('Y') ?> AUTOSERVICE. Все права защищены.</h6>
+                        <img src="/ck50negativ.jpg" width =24; heigh = 24px; alt="Логотип"><small>Версия 2.0.0</small>
+						<a href="https://deepseekcom.ru" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="center" title="Особая благодарность Deep Seek" target="_blank">
+   <h6 style="color: var(--gold-primary);">Особая благодарность DeepSeek</h6></a></center>
+                        
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div> <!-- Закрываем main-content -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Анимация сайдбара
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        });
+        
+        // Эффект блеска для золотых кнопок
+        document.querySelectorAll('.btn-gold').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                btn.style.boxShadow = '0 0 15px var(--gold-primary)';
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                btn.style.boxShadow = 'none';
+            });
+        });
+        
+        // Плавное появление элементов
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('.card, .table');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+    </script>
+    
+</body>
+</html>

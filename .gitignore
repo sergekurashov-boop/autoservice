@@ -1,0 +1,39 @@
+﻿# Системные файлы
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+desktop.ini
+
+# Папка бэкапов
+backup/
+
+# Конфигурационные файлы с паролями
+/includes/config.php
+*.env
+config.local.php
+
+# Логи
+*.log
+error_log
+/debug.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-*
+
+# Временные файлы
+/tmp/
+/cache/
+/uploads/temp/
+
+# Базы данных (если вдруг попали в проект)
+*.sqlite
+*.db
+
+# WAMP/XAMP специфичные
+/bin/
+/phpmyadmin/

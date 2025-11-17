@@ -1,0 +1,870 @@
+/* assets/css/orders.css */
+.orders-container { 
+    background: #fff8dc; 
+    min-height: 100vh; 
+    padding: 20px 0; 
+}
+
+.enhanced-card { 
+    background: white; 
+    border: 2px solid #8b6914; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 12px rgba(139, 105, 20, 0.1); 
+    margin-bottom: 24px; 
+    transition: all 0.3s ease; 
+}
+
+.enhanced-card:hover { 
+    box-shadow: 0 6px 20px rgba(139, 105, 20, 0.15); 
+    transform: translateY(-2px); 
+}
+
+.enhanced-card-header { 
+    background: linear-gradient(135deg, #8b6914, #6b5200); 
+    color: white; 
+    border-radius: 10px 10px 0 0 !important; 
+    padding: 16px 20px; 
+    font-weight: 600; 
+    font-size: 1.2em; 
+}
+
+.orders-table-container { 
+    background: white; 
+    border-radius: 12px; 
+    overflow: hidden; 
+    box-shadow: 0 2px 8px rgba(139, 105, 20, 0.08); 
+}
+
+.orders-table-enhanced { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 0.95em; 
+}
+
+.orders-table-enhanced thead { 
+    background: linear-gradient(135deg, #fff8dc, #ffeb99); 
+    border-bottom: 3px solid #8b6914; 
+}
+
+.orders-table-enhanced th { 
+    padding: 16px 12px; 
+    text-align: left; 
+    font-weight: 600; 
+    color: #6b5200; 
+    border: none; 
+    position: sticky; 
+    top: 0; 
+    background: inherit; 
+}
+
+.orders-table-enhanced td { 
+    padding: 14px 12px; 
+    border-bottom: 1px solid #e0e0e0; 
+    vertical-align: top; 
+}
+
+.orders-table-enhanced tbody tr { 
+    transition: all 0.2s ease; 
+    border-left: 3px solid transparent; 
+}
+
+.orders-table-enhanced tbody tr:hover { 
+    background: #fff8dc; 
+    border-left: 3px solid #8b6914; 
+    transform: scale(1.002); 
+}
+
+.col-id { width: 80px; } 
+.col-date { width: 120px; } 
+.col-client { width: 180px; } 
+.col-car { width: 150px; } 
+.col-desc { width: 200px; min-width: 200px; } 
+.col-status { width: 140px; } 
+.col-amount { width: 120px; } 
+.col-actions { width: 100px; }
+.col-services { width: 100px; text-align: center; }
+.col-parts { width: 100px; text-align: center; }
+
+.order-id { 
+    font-weight: 600; 
+    color: #8b6914; 
+}
+
+.order-link { 
+    color: #8b6914; 
+    text-decoration: none; 
+    font-weight: 600; 
+    transition: color 0.2s; 
+}
+
+.order-link:hover { 
+    color: #6b5200; 
+    text-decoration: underline; 
+}
+
+.order-date { 
+    font-size: 0.9em; 
+}
+
+.date-main { 
+    font-weight: 600; 
+    color: #6b5200; 
+}
+
+.date-time { 
+    font-size: 0.85em; 
+    color: #666; 
+}
+
+.client-info, .car-info { 
+    font-size: 0.95em; 
+}
+
+.client-name, .car-main { 
+    font-weight: 600; 
+    margin-bottom: 2px; 
+}
+
+.client-phone, .car-plate { 
+    font-size: 0.85em; 
+    color: #666; 
+}
+
+.order-desc .desc-text { 
+    max-width: 200px; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+    cursor: help; 
+}
+
+.status-badge-enhanced { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 6px; 
+    padding: 6px 12px; 
+    border-radius: 20px; 
+    font-size: 0.85em; 
+    font-weight: 500; 
+    text-transform: capitalize; 
+}
+
+.status-badge-enhanced.completed { 
+    background: #d4edda; 
+    color: #155724; 
+    border: 1px solid #c3e6cb; 
+}
+
+.status-badge-enhanced.working { 
+    background: #cce7ff; 
+    color: #004085; 
+    border: 1px solid #b3d7ff; 
+}
+
+.status-badge-enhanced.waiting { 
+    background: #fff3cd; 
+    color: #856404; 
+    border: 1px solid #ffeaa7; 
+}
+
+.status-badge-enhanced.diagnosis { 
+    background: #e2e3e5; 
+    color: #383d41; 
+    border: 1px solid #d6d8db; 
+}
+
+.status-badge-enhanced.pending { 
+    background: #f8d7da; 
+    color: #721c24; 
+    border: 1px solid #f1b0b7; 
+}
+
+.status-icon { 
+    font-size: 1.1em; 
+}
+
+.order-amount { 
+    text-align: right; 
+}
+
+.amount-main { 
+    font-weight: 600; 
+    color: #6b5200; 
+    font-size: 1.1em; 
+}
+
+.amount-status { 
+    font-size: 0.8em; 
+    margin-top: 2px; 
+}
+
+.amount-status.paid { 
+    color: #28a745; 
+    font-weight: 500; 
+}
+
+.amount-status.unpaid { 
+    color: #dc3545; 
+    font-weight: 500; 
+}
+
+.services-amount, .parts-amount {
+    font-weight: 500;
+}
+
+.order-services, .order-parts {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.action-buttons { 
+    display: flex; 
+    gap: 8px; 
+    justify-content: center; 
+}
+
+.action-btn { 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    width: 32px; 
+    height: 32px; 
+    border: none; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    transition: all 0.2s ease; 
+    font-size: 1.1em; 
+    text-decoration: none; 
+}
+
+.action-btn.edit { 
+    background: #e3f2fd; 
+    color: #1976d2; 
+}
+
+.action-btn.print { 
+    background: #fff3e0; 
+    color: #f57c00; 
+}
+
+.action-btn.delete { 
+    background: #ffebee; 
+    color: #d32f2f; 
+}
+
+.action-btn:hover { 
+    transform: scale(1.1); 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2); 
+}
+
+.no-orders { 
+    text-align: center; 
+    padding: 60px 20px !important; 
+    color: #666; 
+}
+
+.no-orders-content { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 12px; 
+}
+
+.no-orders-icon { 
+    font-size: 3em; 
+    opacity: 0.5; 
+}
+
+.no-orders-text { 
+    font-size: 1.2em; 
+    font-weight: 500; 
+}
+
+.search-results-enhanced { 
+    position: absolute; 
+    top: 100%; 
+    left: 0; 
+    right: 0; 
+    background: white; 
+    border: 2px solid #8b6914; 
+    border-top: none; 
+    border-radius: 0 0 8px 8px; 
+    max-height: 300px; 
+    overflow-y: auto; 
+    z-index: 1000; 
+    box-shadow: 0 4px 12px rgba(139, 105, 20, 0.15); 
+}
+
+.client-info-card { 
+    border: 2px solid #8b6914; 
+    border-radius: 8px; 
+    background: #fff8dc; 
+}
+
+.btn-1c-primary { 
+    background: linear-gradient(135deg, #8b6914, #6b5200); 
+    border: none; 
+    color: white; 
+    font-weight: 500; 
+    padding: 10px 20px; 
+    border-radius: 8px; 
+    transition: all 0.3s ease; 
+}
+
+.btn-1c-primary:hover { 
+    background: linear-gradient(135deg, #6b5200, #8b6914); 
+    color: white; 
+    transform: translateY(-1px); 
+    box-shadow: 0 4px 12px rgba(139, 105, 20, 0.3); 
+}
+
+.btn-1c-outline { 
+    border: 2px solid #8b6914; 
+    color: #8b6914; 
+    background: transparent; 
+    font-weight: 500; 
+    padding: 8px 16px; 
+    border-radius: 8px; 
+    transition: all 0.3s ease; 
+}
+
+.btn-1c-outline:hover { 
+    background: #8b6914; 
+    color: white; 
+    transform: translateY(-1px); 
+}
+
+.alert-enhanced { 
+    border: none; 
+    border-radius: 10px; 
+    padding: 16px 20px; 
+    font-weight: 500; 
+    border-left: 4px solid; 
+}
+
+.alert-success { 
+    background: #d4edda; 
+    color: #155724; 
+    border-left-color: #28a745; 
+}
+
+.alert-danger { 
+    background: #f8d7da; 
+    color: #721c24; 
+    border-left-color: #dc3545; 
+}
+
+/* Стили для форм */
+.form-container-full {
+    width: 100%;
+    max-width: none;
+    padding: 20px;
+}
+
+.form-container-full .client-form {
+    padding: 40px;
+}
+
+.form-container-full .form-control {
+    padding: 16px 20px;
+    font-size: 1.1em;
+}
+
+.client-form {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #6b5200;
+    font-size: 1em;
+}
+
+.form-control {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px solid #8b6914;
+    border-radius: 8px;
+    background: white;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #6b5200;
+    box-shadow: 0 0 0 3px rgba(139, 105, 20, 0.1);
+    background: #fff8dc;
+}
+
+.form-control::placeholder {
+    color: #999;
+}
+
+.form-actions {
+    margin-top: 30px;
+    text-align: center;
+}
+
+/* Строки формы */
+.form-row {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.form-group-wide {
+    flex: 3;
+}
+
+/* Радио кнопки */
+.radio-group {
+    display: flex;
+    gap: 30px;
+    margin-top: 10px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #6b5200;
+}
+
+.radio-custom {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #8b6914;
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+}
+
+.radio-label input[type="radio"] {
+    display: none;
+}
+
+.radio-label input[type="radio"]:checked + .radio-custom::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: #8b6914;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Поля для юрлица */
+.legal-fields {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px dashed #8b6914;
+}
+
+.form-section-divider {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.form-section-divider span {
+    background: #fff8dc;
+    padding: 0 20px;
+    color: #6b5200;
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+/* Большое текстовое поле */
+.textarea-large {
+    min-height: 80px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.textarea-large:focus {
+    outline: none;
+    border-color: #6b5200;
+    box-shadow: 0 0 0 3px rgba(139, 105, 20, 0.1);
+    background: #fff8dc;
+}
+
+/* Дополнительные стили для контейнера заголовка */
+.container-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.page-title {
+    color: #1c6ea4;
+    margin: 0;
+    font-size: 1.8em;
+}
+
+/* Стили для обязательных полей */
+.form-label::after {
+    content: " *";
+    color: #dc3545;
+}
+
+/* Анимации */
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+.order-row { 
+    animation: fadeIn 0.3s ease; 
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) { 
+    .action-buttons { 
+        flex-direction: column; 
+        gap: 4px; 
+    } 
+    
+    .action-btn { 
+        width: 28px; 
+        height: 28px; 
+        font-size: 1em; 
+    }
+
+    .form-container-full {
+        padding: 10px;
+    }
+    
+    .form-container-full .client-form {
+        padding: 20px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .radio-group {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .container-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .form-control {
+        padding: 14px 16px;
+    }
+}
+/* Улучшенные стили для формы */
+.form-container-full {
+    width: 100%;
+    max-width: none;
+    padding: 20px;
+}
+
+.form-container-full .enhanced-card {
+    margin: 0 auto;
+    max-width: 1200px; /* Ограничиваем максимальную ширину карточки */
+}
+
+.form-container-full .client-form {
+    padding: 40px;
+}
+
+/* Увеличиваем размер полей ввода */
+.form-container-full .form-control {
+    padding: 18px 20px;
+    font-size: 1.2em;
+    border: 2px solid #8b6914;
+    border-radius: 10px;
+    background: #fff;
+    transition: all 0.3s ease;
+    height: auto;
+    min-height: 60px;
+    box-sizing: border-box;
+}
+
+/* Увеличиваем текстовые области */
+.form-container-full .textarea-large {
+    min-height: 120px;
+    padding: 18px 20px;
+    font-size: 1.2em;
+    line-height: 1.5;
+}
+
+/* Увеличиваем метки */
+.form-container-full .form-label {
+    font-size: 1.3em;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #6b5200;
+}
+
+/* Увеличиваем радио-кнопки */
+.form-container-full .radio-group {
+    gap: 40px;
+    margin-top: 15px;
+}
+
+.form-container-full .radio-label {
+    font-size: 1.2em;
+    gap: 12px;
+}
+
+.form-container-full .radio-custom {
+    width: 24px;
+    height: 24px;
+}
+
+.form-container-full .radio-custom::after {
+    width: 14px;
+    height: 14px;
+}
+
+/* Увеличиваем кнопку */
+.form-container-full .btn-1c-primary {
+    padding: 18px 40px;
+    font-size: 1.3em;
+    border-radius: 10px;
+}
+
+/* Улучшаем отступы между группами */
+.form-container-full .form-group {
+    margin-bottom: 30px;
+}
+
+.form-container-full .form-row {
+    gap: 40px;
+    margin-bottom: 30px;
+}
+
+/* Улучшаем разделитель */
+.form-container-full .form-section-divider span {
+    font-size: 1.4em;
+    padding: 0 30px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .form-container-full {
+        padding: 10px;
+    }
+    
+    .form-container-full .client-form {
+        padding: 20px;
+    }
+    
+    .form-container-full .form-control {
+        padding: 16px 18px;
+        font-size: 1.1em;
+        min-height: 55px;
+    }
+    
+    .form-container-full .form-label {
+        font-size: 1.1em;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 20px;
+    }
+}
+/* Стили для создания заказа */
+.search-input-group {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.search-input-group .form-control {
+    flex: 1;
+}
+
+.search-result-item {
+    width: 100%;
+    padding: 15px 20px;
+    border: none;
+    border-bottom: 1px solid #e0e0e0;
+    background: white;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover {
+    background: #fff8dc;
+}
+
+.search-result-name {
+    font-weight: 600;
+    color: #6b5200;
+    margin-bottom: 4px;
+}
+
+.search-result-phone {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.select-group {
+    display: flex;
+    gap: 15px;
+}
+
+.form-select {
+    flex: 1;
+    padding: 16px 20px;
+    border: 2px solid #8b6914;
+    border-radius: 8px;
+    background: white;
+    font-size: 1.1em;
+    cursor: pointer;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: #6b5200;
+    box-shadow: 0 0 0 3px rgba(139, 105, 20, 0.1);
+}
+
+.form-select:disabled {
+    background: #f5f5f5;
+    border-color: #ccc;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.client-info-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 0.9em;
+}
+
+.btn-large {
+    padding: 18px 40px;
+    font-size: 1.3em;
+}
+
+/* Модальное окно */
+.modal-enhanced {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-enhanced .modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-enhanced .modal-header {
+    background: linear-gradient(135deg, #8b6914, #6b5200);
+    color: white;
+    padding: 20px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-enhanced .modal-title {
+    margin: 0;
+    font-size: 1.4em;
+    font-weight: 600;
+}
+
+.modal-enhanced .btn-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2em;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-enhanced .modal-body {
+    padding: 30px;
+}
+
+.modal-enhanced .modal-footer {
+    padding: 20px 30px;
+    border-top: 2px solid #8b6914;
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .search-input-group {
+        flex-direction: column;
+    }
+    
+    .select-group {
+        flex-direction: column;
+    }
+    
+    .client-info-content {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .modal-enhanced .modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .modal-enhanced .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-enhanced .modal-footer {
+        flex-direction: column;
+    }
+}

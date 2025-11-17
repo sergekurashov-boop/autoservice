@@ -1,0 +1,108 @@
+<div class="gearbox-comparison">
+    <table>
+        <thead>
+            <tr>
+                <th>Характеристика</th>
+                <th>DSG7 (Робот)</th>
+                <th>TF-80SC (Автомат)</th>
+                <th>JF011E (Вариатор)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Передач</td>
+                <td>7</td>
+                <td>6</td>
+                <td>Бесступенчатая</td>
+            </tr>
+            <tr>
+                <td>Масло</td>
+                <td>1.7 л</td>
+                <td>7.2 л</td>
+                <td>6.5 л</td>
+            </tr>
+            <tr>
+                <td>Ресурс</td>
+                <td>150-200 тыс.км</td>
+                <td>300+ тыс.км</td>
+                <td>120-180 тыс.км</td>
+            </tr>
+            <tr>
+                <td>Ремонт</td>
+                <td>от 70 000 руб</td>
+                <td>от 40 000 руб</td>
+                <td>от 50 000 руб</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div class="conclusion">
+        <h3>Ключевые отличия:</h3>
+        <ul>
+            <li><strong>Роботы (DSG)</strong> - быстрое переключение, но низкий ресурс</li>
+			## Особенности эксплуатации<br>
+- Избегайте резких стартов на первой передаче<br>
+- При остановке более 30 сек переключайтесь в "N"<br>
+- Прогревайте трансмиссию в холодное время года<br>
+
+## Диагностические коды ошибок<br>
+- P1890 - Неисправность муфты сцепления<br>
+- P2711 - Непредвиденное переключение передач<br>
+- P17BF - Износ сцепления<br>
+            <li><strong>Классические АКПП</strong> - надежность, но высокий расход топлива</li>
+            <li><strong>Вариаторы (CVT)</strong> - плавность хода, дорогой ремонт</li>
+        </ul>
+    </div>
+</div>
+<div class="gearbox-quiz">
+    <div class="question active" data-step="1">
+        <h3>Как происходит переключение передач?</h3>
+        <button data-next="2" data-type="robot">Мгновенно, без разрыва мощности</button>
+        <button data-next="2" data-type="auto">С ощутимыми паузами</button>
+        <button data-next="2" data-type="cvt">Плавно, без ощущения переключений</button>
+    </div>
+    
+    <div class="question" data-step="2">
+        <h3>Есть ли рычаг переключения передач?</h3>
+        <button data-next="3" data-type="auto">Да, с фиксированными положениями</button>
+        <button data-next="3" data-type="robot">Да, но без фиксации положений</button>
+        <button data-next="3" data-type="cvt">Нет, только селектор режимов</button>
+    </div>
+    
+    <div class="result" data-type="robot">
+        <h2>У вас роботизированная КПП (DSG/DCT)</h2>
+        <p>Особенности: два сцепления, быстрое переключение, требует аккуратной эксплуатации.</p>
+        <a href="/tipy-kpp/robot">Подробнее о роботах</a>
+    </div>
+    
+    <div class="result" data-type="auto">
+        <h2>У вас классический автомат (АТ)</h2>
+        <p>Особенности: гидротрансформатор, надежность, плавность хода.</p>
+        <a href="/tipy-kpp/avtomat">Подробнее об АКПП</a>
+    </div>
+    
+    <div class="result" data-type="cvt">
+        <h2>У вас вариатор (CVT)</h2>
+        <p>Особенности: бесступенчатая трансмиссия, максимальная плавность.</p>
+        <a href="/tipy-kpp/variator">Подробнее о вариаторах</a>
+    </div>
+</div>
+<script>
+document.querySelectorAll('.gearbox-quiz button').forEach(button => {
+    button.addEventListener('click', function() {
+        const step = this.dataset.next;
+        const type = this.dataset.type;
+        
+        // Скрыть текущий вопрос
+        this.closest('.question').classList.remove('active');
+        
+        if (step) {
+            // Показать следующий вопрос
+            document.querySelector(`.question[data-step="${step}"]`).classList.add('active');
+        } else {
+            // Показать результат
+            document.querySelector(`.result[data-type="${type}"]`).classList.add('active');
+        }
+    });
+});
+</script>

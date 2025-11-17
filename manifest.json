@@ -1,0 +1,22 @@
+{
+  "name": "Акт осмотра авто",
+  "short_name": "АктОсмотра",
+  "description": "Мобильное приложение для актов осмотра",
+  "start_url": "/autoservice/inspection_mobile.php",
+  "display": "standalone",
+  "background_color": "#2c3e50",
+  "theme_color": "#2c3e50",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/autoservice/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/autoservice/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
