@@ -175,10 +175,7 @@ if ($user_role === 'admin'):
                 <a href="admin.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'admin.php' ? 'active' : '' ?>">
                     ⚙️ Настройки системы
                 </a>
-                <a href="users.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'users.php' ? 'active' : '' ?>">
-                    👥 Пользователи
-                </a>
-                <!-- ОБНОВЛЕННЫЙ РАЗДЕЛ ЗАРПЛАТ -->
+                    <!-- ОБНОВЛЕННЫЙ РАЗДЕЛ ЗАРПЛАТ -->
                 <a href="salaries.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'salaries.php' ? 'active' : '' ?>">
                     💰 Зарплаты
                 </a>

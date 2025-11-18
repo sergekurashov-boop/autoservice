@@ -4,7 +4,6 @@ require 'includes/db.php';
 require_once 'auth_check.php';
 //requireAuth();
 
-
 // Параметры фильтрации
 $status_filter = $_GET['status'] ?? '';
 $search_query = $_GET['search'] ?? '';
@@ -27,16 +26,19 @@ if (!empty($where_conditions)) {
     $where_sql = "WHERE " . implode(" AND ", $where_conditions);
 }
 
-// Простой запрос заказов
+// Простой запрос заказов - ДОБАВЛЕНО ОПИСАНИЕ УСЛУГ
 $orders_sql = "
     SELECT o.id, o.created, o.description, o.status, o.total, 
            c.make, c.model, c.license_plate,
-           cl.name AS client_name, cl.phone as client_phone
+           cl.name AS client_name, cl.phone as client_phone,
+           GROUP_CONCAT(DISTINCT os.service_name SEPARATOR ', ') as services_list
     FROM orders o
     JOIN cars c ON o.car_id = c.id
     JOIN clients cl ON c.client_id = cl.id
+    LEFT JOIN order_services os ON o.id = os.order_id
     $where_sql
-    ORDER BY o.created DESC
+    GROUP BY o.id
+    ORDER BY o.id DESC
     LIMIT 50
 ";
 
@@ -115,7 +117,8 @@ include 'templates/header.php';
                                 <th>Дата</th>
                                 <th>Клиент</th>
                                 <th>Автомобиль</th>
-                                <th>Описание</th>
+                                <th>Проблема</th>
+                                <th>Услуги</th>
                                 <th>Статус</th>
                                 <th>Сумма</th>
                                 <th>Действия</th>
@@ -126,7 +129,7 @@ include 'templates/header.php';
                                 <tr>
                                     <td>
                                         <a href="order_edit.php?id=<?= $order['id'] ?>" 
-                                           onclick="logOrderView(<?= $order['id'] ?>)">#<?= $order['id'] ?></a>
+                                           onclick="logOrderView(<?= $order['id'] ?>)">№<?= $order['id'] ?></a>
                                     </td>
                                     <td><?= date('d.m.Y', strtotime($order['created'])) ?></td>
                                     <td>
@@ -140,6 +143,15 @@ include 'templates/header.php';
                                         <?php endif; ?>
                                     </td>
                                     <td><?= htmlspecialchars($order['description']) ?></td>
+                                    <td>
+                                        <?php if (!empty($order['services_list'])): ?>
+                                            <div style="max-width: 200px; font-size: 0.9em;">
+                                                <?= htmlspecialchars($order['services_list']) ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <span class="status-badge-enhanced 
                                             <?= $order['status'] == 'В ожидании' ? 'waiting' : '' ?>

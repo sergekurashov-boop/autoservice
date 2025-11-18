@@ -12,43 +12,185 @@ requireAuth();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $client_id = (int)$_POST['client_id'];
     $car_id = (int)$_POST['car_id'];
-    $description = trim($_POST['description']);
+    $order_type = $_POST['order_type'] ?? 'standard';
+    $description = trim($_POST['description'] ?? '');
     $services_data = $_POST['services_data'] ?? '';
+    $inspection_data = $_POST['inspection_data'] ?? '';
 
-    if (empty($client_id) || empty($car_id) || empty($description)) {
-        $_SESSION['error'] = "Пожалуйста, заполните все обязательные поля";
+    // Валидация
+    if (empty($client_id) || empty($car_id)) {
+        $_SESSION['error'] = "Пожалуйста, выберите клиента и автомобиль";
+    } elseif ($order_type === 'standard' && empty($description)) {
+        $_SESSION['error'] = "Пожалуйста, заполните описание проблемы";
+    } elseif ($order_type === 'inspection' && empty($inspection_data)) {
+        $_SESSION['error'] = "Пожалуйста, добавьте пункты осмотра";
     } else {
+        // Для осмотра автоматически генерируем описание
+        if ($order_type === 'inspection') {
+            $description = "Осмотр ТС по акту";
+        }
+        
+        // ИСПРАВЛЕНО: убрана колонка order_type
         $stmt = $conn->prepare("INSERT INTO orders (car_id, description, status) VALUES (?, ?, 'В ожидании')");
         $stmt->bind_param("is", $car_id, $description);
         
         if ($stmt->execute()) {
             $order_id = $conn->insert_id;
             
-            // Сохраняем выбранные услуги если есть
-            if (!empty($services_data)) {
-                $services = json_decode($services_data, true);
-                foreach ($services as $service) {
-                    $stmt = $conn->prepare("
-                        INSERT INTO order_services (order_id, service_id, service_name, quantity, price) 
-                        VALUES (?, ?, ?, ?, ?)
-                    ");
-                    $stmt->bind_param("iisid", 
-                        $order_id, 
-                        $service['id'], 
-                        $service['name'], 
-                        $service['quantity'], 
-                        $service['price'] ?? 0
-                    );
-                    $stmt->execute();
+            if ($order_type === 'inspection' && !empty($inspection_data)) {
+                // Сохраняем данные осмотра
+                saveInspectionData($order_id, $inspection_data);
+                // Автоматически создаем услуги из осмотра
+                createServicesFromInspection($order_id, $inspection_data);
+            } else {
+                // Стандартное сохранение услуг
+                if (!empty($services_data)) {
+                    saveStandardServices($order_id, $services_data);
                 }
             }
             
-            $_SESSION['success'] = "Заказ #$order_id успешно создан!";
-            header("Location: order_edit.php?id=$order_id");
+            $_SESSION['success'] = "Заказ №$order_id успешно создан!";
+            header("Location: " . ($order_type === 'inspection' ? "order_inspection.php?order_id=$order_id" : "orders.php"));
             exit;
         } else {
             $_SESSION['error'] = "Ошибка при создании заказа: " . $conn->error;
         }
+    }
+}
+
+// Функция сохранения данных осмотра
+function saveInspectionData($order_id, $inspection_data) {
+    global $conn;
+    $data = json_decode($inspection_data, true);
+    
+    if (is_array($data)) {
+        foreach ($data as $item) {
+            $stmt = $conn->prepare("
+                INSERT INTO order_inspection_data (order_id, item_name, side, action, work_price, part_price, total_price, item_type) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->bind_param("isssddds", 
+                $order_id, 
+                $item['name'],
+                $item['side'] ?? 'none',
+                $item['action'] ?? 'replace',
+                $item['work_price'] ?? 0,
+                $item['part_price'] ?? 0,
+                $item['total_price'] ?? 0,
+                $item['type'] ?? 'custom'
+            );
+            $stmt->execute();
+        }
+    }
+}
+// Функция создания услуг из осмотра
+function createServicesFromInspection($order_id, $inspection_data) {
+    global $conn;
+    $data = json_decode($inspection_data, true);
+    $total_amount = 0;
+    
+    if (is_array($data)) {
+        foreach ($data as $item) {
+            if (($item['total_price'] ?? 0) > 0) {
+                // Подготавливаем значения заранее
+                $service_name = $item['name'] ?? '';
+                if (($item['side'] ?? 'none') !== 'none') {
+                    $service_name .= " (" . getSideLabel($item['side']) . ")";
+                }
+                if (($item['action'] ?? 'replace') !== 'replace') {
+                    $service_name .= " - " . getActionLabel($item['action']);
+                }
+                $price = (float)($item['total_price'] ?? 0);
+                
+                $stmt = $conn->prepare("
+                    INSERT INTO order_services (order_id, service_id, service_name, quantity, price) 
+                    VALUES (?, 0, ?, 1, ?)
+                ");
+                
+                if ($stmt) {
+                    $stmt->bind_param("isd", $order_id, $service_name, $price);
+                    $stmt->execute();
+                    $total_amount += $price;
+                }
+            }
+        }
+        
+        // Обновляем общую сумму заказа
+        if ($total_amount > 0) {
+            $stmt = $conn->prepare("UPDATE orders SET total = ? WHERE id = ?");
+            $stmt->bind_param("di", $total_amount, $order_id);
+            $stmt->execute();
+        }
+    }
+}
+// Функция сохранения стандартных услуг
+function saveStandardServices($order_id, $services_data) {
+    global $conn;
+    $services = json_decode($services_data, true);
+    $total_amount = 0;
+    
+    if (is_array($services)) {
+        foreach ($services as $service) {
+            // Подготавливаем значения заранее
+            $service_id = (int)($service['id'] ?? 0);
+            $service_name = $service['name'] ?? '';
+            $quantity = (int)($service['quantity'] ?? 1);
+            $price = (float)($service['price'] ?? 0);
+            
+            $stmt = $conn->prepare("
+                INSERT INTO order_services (order_id, service_id, service_name, quantity, price) 
+                VALUES (?, ?, ?, ?, ?)
+            ");
+            
+            if ($stmt) {
+                $stmt->bind_param("iisid", 
+                    $order_id, 
+                    $service_id, 
+                    $service_name, 
+                    $quantity, 
+                    $price
+                );
+                $stmt->execute();
+                $total_amount += $price * $quantity;
+            }
+        }
+        
+        // Обновляем общую сумму заказа
+        if ($total_amount > 0) {
+            $stmt = $conn->prepare("UPDATE orders SET total = ? WHERE id = ?");
+            $stmt->bind_param("di", $total_amount, $order_id);
+            $stmt->execute();
+        }
+    }
+}
+// Вспомогательные функции
+function getSideLabel($side) {
+    $labels = ['left' => 'Левая', 'right' => 'Правая', 'both' => 'Обе', 'none' => ''];
+    return $labels[$side] ?? $side;
+}
+
+function getActionLabel($action) {
+    $labels = ['repair' => 'Ремонт', 'replace' => 'Замена', 'diagnostic' => 'Диагностика'];
+    return $labels[$action] ?? $action;
+}
+
+// Получаем шаблонные пункты для осмотра
+$categories = [];
+$result = $conn->query("
+    SELECT ic.name as category_name, ic.id as category_id,
+           ii.id, ii.name, ii.default_side, ii.default_action,
+           ii.typical_work_price, ii.typical_part_price
+    FROM inspection_categories ic 
+    JOIN inspection_items ii ON ic.id = ii.category_id 
+    ORDER BY ic.sort_order, ii.sort_order
+");
+
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        if (!isset($categories[$row['category_name']])) {
+            $categories[$row['category_name']] = [];
+        }
+        $categories[$row['category_name']][] = $row;
     }
 }
 
@@ -61,6 +203,188 @@ include 'templates/header.php';
     <meta charset="UTF-8">
     <title>Создание нового заказа</title>
     <link href="assets/css/orders.css" rel="stylesheet">
+    <style>
+        /* Стили для модальных окон */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 600px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2c3e50;
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: white;
+        }
+
+        .close {
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .modal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .modal-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .modal-item-info {
+            flex: 1;
+        }
+
+        .modal-item-info h5 {
+            margin: 0 0 4px 0;
+        }
+
+        .modal-item-details {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .loading, .no-results, .error {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        /* Стили для осмотра */
+        .inspection-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .search-box {
+            margin-bottom: 15px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .template-section {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .inspection-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .category-section {
+            margin-bottom: 20px;
+        }
+        
+        .category-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .template-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .template-item:hover {
+            background: #f8f9fa;
+            border-color: #3498db;
+        }
+        
+        .inspection-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .inspection-table th,
+        .inspection-table td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        
+        .inspection-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <div class="orders-container">
@@ -131,15 +455,24 @@ include 'templates/header.php';
                             </div>
                         </div>
 
-                        <!-- 3. ПРОБЛЕМА -->
+                        <!-- 3. ТИП ЗАКАЗА -->
                         <div class="form-group">
+                            <label class="form-label">Тип заказа *</label>
+                            <select id="orderType" name="order_type" class="form-control" onchange="toggleOrderType()" required>
+                                <option value="standard">📝 Стандартный заказ (с описанием проблемы)</option>
+                                <option value="inspection">🔍 Осмотр ТС + Акт</option>
+                            </select>
+                        </div>
+
+                        <!-- 4. СТАНДАРТНАЯ ПРОБЛЕМА -->
+                        <div id="problemSection" class="form-group">
                             <label for="description" class="form-label">Описание проблемы *</label>
                             <textarea name="description" id="description" class="form-control textarea-large" 
                                       rows="6" required placeholder="Опишите проблему или необходимые работы..."></textarea>
                         </div>
 
-                        <!-- 4. УСЛУГИ И РАБОТЫ -->
-                        <div class="form-group">
+                        <!-- 5. УСЛУГИ И РАБОТЫ (для стандартного заказа) -->
+                        <div id="servicesSection" class="form-group">
                             <label class="form-label">Быстрый поиск услуг</label>
                             <div class="search-input-group">
                                 <input type="text" id="serviceQuickSearch" class="form-control" 
@@ -174,8 +507,83 @@ include 'templates/header.php';
                             </div>
                         </div>
 
+                        <!-- 6. ФОРМА ОСМОТРА (скрыта по умолчанию) -->
+                        <div id="inspectionSection" class="form-group" style="display: none;">
+                            <div class="enhanced-card">
+                                <div class="enhanced-card-header">
+                                    <span class="card-header-icon">🔍</span> Осмотр транспортного средства
+                                </div>
+                                <div class="card-body">
+                                    <div class="inspection-container">
+                                        <!-- Левая колонка - шаблонные пункты -->
+                                        <div class="template-section">
+                                            <h4>📋 Шаблонные пункты</h4>
+                                            
+                                            <div class="search-box">
+                                                <input type="text" id="itemSearch" placeholder="🔍 Поиск детали..." onkeyup="filterItems()">
+                                            </div>
+                                            
+                                            <?php foreach ($categories as $category_name => $items): ?>
+                                            <div class="category-section">
+                                                <div class="category-title"><?= htmlspecialchars($category_name) ?></div>
+                                                <?php foreach ($items as $item): ?>
+                                                <div class="template-item" data-name="<?= strtolower(htmlspecialchars($item['name'])) ?>" 
+                                                     onclick="addTemplateItem(<?= $item['id'] ?>, '<?= addslashes(htmlspecialchars($item['name'])) ?>', 
+                                                     '<?= $item['default_side'] ?>', '<?= $item['default_action'] ?>', 
+                                                     <?= $item['typical_work_price'] ?? 0 ?>, <?= $item['typical_part_price'] ?? 0 ?>)">
+                                                    <span><?= htmlspecialchars($item['name']) ?></span>
+                                                    <button type="button" class="btn-1c-primary btn-small" style="padding: 4px 8px; font-size: 12px;">+</button>
+                                                </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        
+                                        <!-- Правая колонка - ведомость осмотра -->
+                                        <div class="inspection-section">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                                <h4>📝 Ведомость осмотра</h4>
+                                                <button type="button" onclick="addCustomItem()" class="btn-1c-primary">
+                                                    ➕ Произвольная позиция
+                                                </button>
+                                            </div>
+                                            
+                                            <table class="inspection-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th width="40%">Деталь/Работа</th>
+                                                        <th width="80px">Сторона</th>
+                                                        <th width="100px">Действие</th>
+                                                        <th width="100px">Работа, руб</th>
+                                                        <th width="100px">Запчасть, руб</th>
+                                                        <th width="100px">Итого</th>
+                                                        <th width="60px"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="inspectionItems">
+                                                    <tr id="noItems">
+                                                        <td colspan="7" style="text-align: center; color: #6c757d; padding: 20px;">
+                                                            Нет добавленных пунктов. Выберите пункты из списка слева или добавьте произвольную позицию.
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <td colspan="5" style="text-align: right; font-weight: bold;">Общая сумма:</td>
+                                                        <td id="totalSum" style="font-weight: bold;">0.00 руб</td>
+                                                        <td></td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="inspectionData" name="inspection_data">
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-actions">
-                            <button type="submit" class="btn-1c-primary btn-large" id="createOrderBtn" disabled>
+                            <button type="submit" class="btn-1c-primary btn-large" id="createOrderBtn">
                                 ✅ Создать заказ
                             </button>
                         </div>
@@ -298,847 +706,577 @@ include 'templates/header.php';
     </div>
 
     <script>
-// Полный код create_order.js
-let selectedClient = null;
-let selectedCar = null;
-let selectedServices = [];
+    // ===== ПЕРЕМЕННЫЕ =====
+    let selectedClient = null;
+    let selectedCar = null;
+    let selectedServices = [];
+    let inspectionItems = [];
+    let itemCounter = 0;
 
-// Проверка готовности формы
-function checkFormCompletion() {
-    const clientId = document.getElementById('selectedClientId').value;
-    const carId = document.getElementById('selectedCarId').value;
-    const description = document.getElementById('description').value.trim();
-    const createOrderBtn = document.getElementById('createOrderBtn');
-    
-    createOrderBtn.disabled = !(clientId && carId && description);
-}
-
-// РАБОТА С КЛИЕНТАМИ
-function openClientSelection() {
-    document.getElementById('clientModal').style.display = 'block';
-    loadClients();
-}
-
-function closeClientModal() {
-    document.getElementById('clientModal').style.display = 'none';
-}
-
-function openAddClientModal() {
-    document.getElementById('addClientModal').style.display = 'block';
-    document.getElementById('addClientForm').reset();
-}
-
-function closeAddClientModal() {
-    document.getElementById('addClientModal').style.display = 'none';
-}
-
-function loadClients() {
-    const clientsList = document.getElementById('clientsList');
-    clientsList.innerHTML = '<div style="padding: 20px; text-align: center;">Загрузка...</div>';
-
-    fetch('get_clients.php')
-        .then(response => response.json())
-        .then(clients => {
-            clientsList.innerHTML = '';
-            
-            if (clients.length > 0) {
-                clients.forEach(client => {
-                    const clientElement = document.createElement('div');
-                    clientElement.className = 'modal-item';
-                    clientElement.onclick = () => selectClient(client);
-                    
-                    clientElement.innerHTML = `
-                        <div class="modal-item-info">
-                            <h5>${client.name}</h5>
-                            <div class="modal-item-details">
-                                ${client.phone ? `📞 ${client.phone}` : ''}
-                                ${client.email ? ` | 📧 ${client.email}` : ''}
-                            </div>
-                        </div>
-                        <button type="button" class="btn-1c-primary btn-small" onclick="event.stopPropagation(); selectClient(${JSON.stringify(client).replace(/"/g, '&quot;')})">
-                            Выбрать
-                        </button>
-                    `;
-                    clientsList.appendChild(clientElement);
-                });
-            } else {
-                clientsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Клиенты не найдены</div>';
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка загрузки клиентов:', error);
-            clientsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка загрузки</div>';
-        });
-}
-
-function searchClients() {
-    const searchTerm = document.getElementById('clientSearch').value.trim();
-    const clientsList = document.getElementById('clientsList');
-    
-    clientsList.innerHTML = '<div style="padding: 20px; text-align: center;">Поиск...</div>';
-
-    fetch('get_clients.php?search=' + encodeURIComponent(searchTerm))
-        .then(response => response.json())
-        .then(clients => {
-            clientsList.innerHTML = '';
-            
-            if (clients.length > 0) {
-                clients.forEach(client => {
-                    const clientElement = document.createElement('div');
-                    clientElement.className = 'modal-item';
-                    clientElement.onclick = () => selectClient(client);
-                    
-                    clientElement.innerHTML = `
-                        <div class="modal-item-info">
-                            <h5>${client.name}</h5>
-                            <div class="modal-item-details">
-                                ${client.phone ? `📞 ${client.phone}` : ''}
-                                ${client.email ? ` | 📧 ${client.email}` : ''}
-                            </div>
-                        </div>
-                        <button type="button" class="btn-1c-primary btn-small" onclick="event.stopPropagation(); selectClient(${JSON.stringify(client).replace(/"/g, '&quot;')})">
-                            Выбрать
-                        </button>
-                    `;
-                    clientsList.appendChild(clientElement);
-                });
-            } else {
-                clientsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Клиенты не найдены</div>';
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка поиска клиентов:', error);
-            clientsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка поиска</div>';
-        });
-}
-
-function selectClient(client) {
-    selectedClient = client;
-    
-    document.getElementById('selectedClientName').textContent = client.name;
-    document.getElementById('selectedClientDetails').innerHTML = `
-        <div>📞 ${client.phone || 'Телефон не указан'}</div>
-        <div>📧 ${client.email || 'Email не указан'}</div>
-    `;
-    document.getElementById('selectedClientId').value = client.id;
-    document.getElementById('selectedClientCard').style.display = 'flex';
-    
-    closeClientModal();
-    checkFormCompletion();
-}
-
-function clearClientSelection() {
-    selectedClient = null;
-    document.getElementById('selectedClientCard').style.display = 'none';
-    document.getElementById('selectedClientId').value = '';
-    checkFormCompletion();
-}
-
-// Добавление нового клиента
-document.getElementById('addClientForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const name = document.getElementById('newClientName').value.trim();
-    const phone = document.getElementById('newClientPhone').value.trim();
-    const email = document.getElementById('newClientEmail').value.trim();
-    
-    if (!name) {
-        alert('Введите ФИО клиента');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('phone', phone);
-    formData.append('email', email);
-    
-    fetch('save_client.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            closeAddClientModal();
-            // Автоматически выбираем нового клиента
-            selectClient({
-                id: result.client_id,
-                name: name,
-                phone: phone,
-                email: email
-            });
-            alert('Клиент успешно добавлен!');
+    // ===== ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ ТИПА ЗАКАЗА =====
+    function toggleOrderType() {
+        const orderType = document.getElementById('orderType').value;
+        const problemSection = document.getElementById('problemSection');
+        const servicesSection = document.getElementById('servicesSection');
+        const inspectionSection = document.getElementById('inspectionSection');
+        
+        if (orderType === 'inspection') {
+            problemSection.style.display = 'none';
+            servicesSection.style.display = 'none';
+            inspectionSection.style.display = 'block';
+            document.getElementById('description').value = 'Осмотр ТС по акту';
         } else {
-            alert('Ошибка: ' + (result.error || 'Неизвестная ошибка'));
+            problemSection.style.display = 'block';
+            servicesSection.style.display = 'block';
+            inspectionSection.style.display = 'none';
+            document.getElementById('description').value = '';
         }
-    })
-    .catch(error => {
-        console.error('Ошибка:', error);
-        alert('Ошибка при сохранении клиента');
-    });
-});
-
-// РАБОТА С АВТОМОБИЛЯМИ
-function openCarSelection() {
-    if (!selectedClient) {
-        alert('Сначала выберите клиента');
-        return;
     }
-    document.getElementById('carModal').style.display = 'block';
-    loadClientCars(selectedClient.id);
-}
 
-function closeCarModal() {
-    document.getElementById('carModal').style.display = 'none';
-}
-
-function openAddCarModal() {
-    if (!selectedClient) {
-        alert('Сначала выберите клиента');
-        return;
-    }
-    document.getElementById('addCarModal').style.display = 'block';
-    document.getElementById('addCarForm').reset();
-    document.getElementById('carClientSelect').value = selectedClient.id;
-}
-
-function closeAddCarModal() {
-    document.getElementById('addCarModal').style.display = 'none';
-}
-
-function loadClientCars(clientId) {
-    const carsList = document.getElementById('carsList');
-    carsList.innerHTML = '<div style="padding: 20px; text-align: center;">Загрузка...</div>';
-
-    fetch('get_client_cars.php?client_id=' + clientId)
-        .then(response => response.json())
-        .then(cars => {
-            carsList.innerHTML = '';
-            
-            if (cars.length > 0) {
-                cars.forEach(car => {
-                    const carElement = document.createElement('div');
-                    carElement.className = 'modal-item';
-                    carElement.onclick = () => selectCar(car);
-                    
-                    carElement.innerHTML = `
-                        <div class="modal-item-info">
-                            <h5>${car.make} ${car.model}</h5>
-                            <div class="modal-item-details">
-                                🚗 ${car.license_plate}
-                                ${car.year ? ` | 📅 ${car.year}` : ''}
-                                ${car.vin ? ` | 🔢 ${car.vin}` : ''}
-                            </div>
-                        </div>
-                        <button type="button" class="btn-1c-primary btn-small" onclick="event.stopPropagation(); selectCar(${JSON.stringify(car).replace(/"/g, '&quot;')})">
-                            Выбрать
-                        </button>
-                    `;
-                    carsList.appendChild(carElement);
-                });
+    // ===== ФУНКЦИИ ОСМОТРА =====
+    function filterItems() {
+        const search = document.getElementById('itemSearch').value.toLowerCase();
+        document.querySelectorAll('.template-item').forEach(item => {
+            const itemName = item.getAttribute('data-name');
+            if (itemName.includes(search)) {
+                item.style.display = 'flex';
             } else {
-                carsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">У клиента нет автомобилей</div>';
+                item.style.display = 'none';
             }
-        })
-        .catch(error => {
-            console.error('Ошибка загрузки авто:', error);
-            carsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка загрузки</div>';
         });
-}
-
-function searchCars() {
-    const searchTerm = document.getElementById('carSearch').value.trim();
-    const carsList = document.getElementById('carsList');
+    }
     
-    if (!searchTerm) {
+    function addTemplateItem(itemId, name, side, action, workPrice, partPrice) {
+        const item = {
+            id: 'tpl_' + itemCounter++,
+            type: 'template',
+            itemId: itemId,
+            name: name,
+            side: side,
+            action: action,
+            work_price: workPrice || 0,
+            part_price: partPrice || 0,
+            total_price: (workPrice || 0) + (partPrice || 0)
+        };
+        
+        inspectionItems.push(item);
+        renderInspectionTable();
+        updateInspectionData();
+    }
+    
+    function addCustomItem() {
+        const name = prompt('Введите название детали/работы:');
+        if (!name) return;
+        
+        const side = prompt('Сторона (left/right/both/none):', 'none');
+        const action = prompt('Действие (repair/replace/diagnostic):', 'replace');
+        const workPrice = parseFloat(prompt('Стоимость работы:', '0')) || 0;
+        const partPrice = parseFloat(prompt('Стоимость запчасти:', '0')) || 0;
+        
+        const item = {
+            id: 'cust_' + itemCounter++,
+            type: 'custom',
+            name: name,
+            side: side || 'none',
+            action: action || 'replace',
+            work_price: workPrice,
+            part_price: partPrice,
+            total_price: workPrice + partPrice
+        };
+        
+        inspectionItems.push(item);
+        renderInspectionTable();
+        updateInspectionData();
+    }
+    
+    function removeItem(itemId) {
+        inspectionItems = inspectionItems.filter(item => item.id !== itemId);
+        renderInspectionTable();
+        updateInspectionData();
+    }
+    
+    function renderInspectionTable() {
+        const tbody = document.getElementById('inspectionItems');
+        const totalElement = document.getElementById('totalSum');
+        const noItemsRow = document.getElementById('noItems');
+        
+        let total = 0;
+        let html = '';
+        
+        inspectionItems.forEach(item => {
+            total += item.total_price;
+            html += `
+                <tr>
+                    <td>${escapeHtml(item.name)}</td>
+                    <td>${getSideLabel(item.side)}</td>
+                    <td>${getActionLabel(item.action)}</td>
+                    <td>${item.work_price.toFixed(2)}</td>
+                    <td>${item.part_price.toFixed(2)}</td>
+                    <td>${item.total_price.toFixed(2)}</td>
+                    <td>
+                        <button type="button" onclick="removeItem('${item.id}')" class="btn-1c-outline btn-small">🗑️</button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        totalElement.textContent = total.toFixed(2) + ' руб';
+        
+        if (inspectionItems.length === 0) {
+            noItemsRow.style.display = '';
+        } else {
+            noItemsRow.style.display = 'none';
+        }
+    }
+    
+    function updateInspectionData() {
+        document.getElementById('inspectionData').value = JSON.stringify(inspectionItems);
+    }
+    
+    function getSideLabel(side) {
+        const labels = {'left': 'Левая', 'right': 'Правая', 'both': 'Обе', 'none': '-'};
+        return labels[side] || side;
+    }
+    
+    function getActionLabel(action) {
+        const labels = {'repair': 'Ремонт', 'replace': 'Замена', 'diagnostic': 'Диагностика'};
+        return labels[action] || action;
+    }
+
+    // ===== ФУНКЦИИ ДЛЯ КЛИЕНТОВ =====
+    function openClientSelection() {
+        document.getElementById('clientModal').style.display = 'block';
+        loadClients();
+    }
+
+    function closeClientModal() {
+        document.getElementById('clientModal').style.display = 'none';
+    }
+
+    function openAddClientModal() {
+        document.getElementById('addClientModal').style.display = 'block';
+    }
+
+    function closeAddClientModal() {
+        document.getElementById('addClientModal').style.display = 'none';
+    }
+
+    function loadClients() {
+        const clientsList = document.getElementById('clientsList');
+        clientsList.innerHTML = '<div style="padding: 20px; text-align: center;">Загрузка...</div>';
+
+        fetch('get_clients.php')
+            .then(response => response.json())
+            .then(clients => {
+                displayClients(clients);
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки клиентов:', error);
+                clientsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка загрузки</div>';
+            });
+    }
+
+    function displayClients(clients) {
+        const clientsList = document.getElementById('clientsList');
+        clientsList.innerHTML = '';
+        
+        if (clients && clients.length > 0) {
+            clients.forEach(client => {
+                const clientElement = document.createElement('div');
+                clientElement.className = 'modal-item';
+                clientElement.onclick = () => selectClient(client);
+                
+                clientElement.innerHTML = `
+                    <div class="modal-item-info">
+                        <h5>${escapeHtml(client.name)}</h5>
+                        <div class="modal-item-details">
+                            ${client.phone ? `📞 ${escapeHtml(client.phone)}` : ''}
+                            ${client.email ? ` | 📧 ${escapeHtml(client.email)}` : ''}
+                        </div>
+                    </div>
+                    <button type="button" class="btn-1c-primary btn-small" onclick="event.stopPropagation(); selectClient(${JSON.stringify(client).replace(/"/g, '&quot;')})">
+                        Выбрать
+                    </button>
+                `;
+                clientsList.appendChild(clientElement);
+            });
+        } else {
+            clientsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Клиенты не найдены</div>';
+        }
+    }
+
+    function searchClients() {
+        const searchTerm = document.getElementById('clientSearch').value.trim();
+        const clientsList = document.getElementById('clientsList');
+        
+        clientsList.innerHTML = '<div style="padding: 20px; text-align: center;">Поиск...</div>';
+
+        fetch('get_clients.php?search=' + encodeURIComponent(searchTerm))
+            .then(response => response.json())
+            .then(clients => {
+                displayClients(clients);
+            })
+            .catch(error => {
+                console.error('Ошибка поиска клиентов:', error);
+                clientsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка поиска</div>';
+            });
+    }
+
+    function selectClient(client) {
+        selectedClient = client;
+        
+        document.getElementById('selectedClientName').textContent = client.name;
+        document.getElementById('selectedClientDetails').innerHTML = `
+            <div>📞 ${client.phone || 'Телефон не указан'}</div>
+            <div>📧 ${client.email || 'Email не указан'}</div>
+        `;
+        document.getElementById('selectedClientId').value = client.id;
+        document.getElementById('selectedClientCard').style.display = 'flex';
+        
+        closeClientModal();
+    }
+
+    function clearClientSelection() {
+        selectedClient = null;
+        document.getElementById('selectedClientCard').style.display = 'none';
+        document.getElementById('selectedClientId').value = '';
+    }
+
+    // ===== ФУНКЦИИ ДЛЯ АВТОМОБИЛЕЙ =====
+    function openCarSelection() {
+        if (!selectedClient) {
+            alert('Сначала выберите клиента');
+            return;
+        }
+        document.getElementById('carModal').style.display = 'block';
         loadClientCars(selectedClient.id);
-        return;
     }
-    
-    carsList.innerHTML = '<div style="padding: 20px; text-align: center;">Поиск...</div>';
 
-    fetch('search_cars.php?license_plate=' + encodeURIComponent(searchTerm))
-        .then(response => response.json())
-        .then(cars => {
-            carsList.innerHTML = '';
-            
-            if (cars.length > 0) {
-                cars.forEach(car => {
-                    const carElement = document.createElement('div');
-                    carElement.className = 'modal-item';
-                    carElement.onclick = () => selectCar(car);
-                    
-                    carElement.innerHTML = `
-                        <div class="modal-item-info">
-                            <h5>${car.make} ${car.model}</h5>
-                            <div class="modal-item-details">
-                                🚗 ${car.license_plate}
-                                ${car.year ? ` | 📅 ${car.year}` : ''}
-                                | 👥 ${car.client_name}
-                            </div>
-                        </div>
-                        <button type="button" class="btn-1c-primary btn-small" onclick="event.stopPropagation(); selectCar(${JSON.stringify(car).replace(/"/g, '&quot;')})">
-                            Выбрать
-                        </button>
-                    `;
-                    carsList.appendChild(carElement);
-                });
-            } else {
-                carsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Автомобили не найдены</div>';
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка поиска авто:', error);
-            carsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка поиска</div>';
-        });
-}
-
-function selectCar(car) {
-    selectedCar = car;
-    
-    document.getElementById('selectedCarTitle').textContent = `${car.make} ${car.model}`;
-    document.getElementById('selectedCarDetails').innerHTML = `
-        <div>🚗 ${car.license_plate}</div>
-        <div>📅 ${car.year || 'Год не указан'}</div>
-        <div>🔢 VIN: ${car.vin || 'не указан'}</div>
-    `;
-    document.getElementById('selectedCarId').value = car.id;
-    document.getElementById('selectedCarCard').style.display = 'flex';
-    
-    closeCarModal();
-    checkFormCompletion();
-}
-
-function clearCarSelection() {
-    selectedCar = null;
-    document.getElementById('selectedCarCard').style.display = 'none';
-    document.getElementById('selectedCarId').value = '';
-    checkFormCompletion();
-}
-
-// Добавление нового автомобиля
-document.getElementById('addCarForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const clientId = document.getElementById('carClientSelect').value;
-    const make = document.getElementById('newCarMake').value.trim();
-    const model = document.getElementById('newCarModel').value.trim();
-    const license_plate = document.getElementById('newCarLicense').value.trim();
-    const year = document.getElementById('newCarYear').value;
-    const vin = document.getElementById('newCarVin').value.trim();
-    
-    if (!make || !model || !license_plate) {
-        alert('Заполните обязательные поля');
-        return;
+    function closeCarModal() {
+        document.getElementById('carModal').style.display = 'none';
     }
-    
-    const formData = new FormData();
-    formData.append('client_id', clientId);
-    formData.append('make', make);
-    formData.append('model', model);
-    formData.append('license_plate', license_plate);
-    formData.append('year', year);
-    formData.append('vin', vin);
-    
-    fetch('save_car.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            closeAddCarModal();
-            // Автоматически выбираем новый автомобиль
-            selectCar({
-                id: result.car_id,
-                make: make,
-                model: model,
-                license_plate: license_plate,
-                year: year,
-                vin: vin
-            });
-            alert('Автомобиль успешно добавлен!');
-        } else {
-            alert('Ошибка: ' + (result.error || 'Неизвестная ошибка'));
+
+    function openAddCarModal() {
+        if (!selectedClient) {
+            alert('Сначала выберите клиента');
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Ошибка:', error);
-        alert('Ошибка при сохранении автомобиля');
-    });
-});
-
-// РАБОТА С УСЛУГАМИ
-function searchServices() {
-    const searchTerm = document.getElementById('serviceQuickSearch').value.trim();
-    
-    if (!searchTerm) {
-        alert('Введите номер или название услуги для поиска');
-        return;
+        document.getElementById('addCarModal').style.display = 'block';
     }
-    
-    const resultsContainer = document.getElementById('servicesSearchResults');
-    const resultsList = document.getElementById('servicesResultsList');
-    
-    resultsList.innerHTML = '<div style="padding: 20px; text-align: center;">Поиск услуг...</div>';
-    resultsContainer.style.display = 'block';
-    
-    fetch('search_services.php?q=' + encodeURIComponent(searchTerm))
-        .then(response => response.json())
-        .then(services => {
-            resultsList.innerHTML = '';
-            
-            if (services.length > 0) {
-                services.forEach(service => {
-                    const serviceElement = document.createElement('div');
-                    serviceElement.className = 'search-result-item';
-                    serviceElement.innerHTML = `
-                        <div class="result-item-info">
-                            <div class="result-item-name">${service.name}</div>
-                            <div class="result-item-details">
-                                ${service.code ? `<span class="badge">Код: ${service.code}</span>` : ''}
-                                ${service.price ? `<span class="price">${formatPrice(service.price)} руб.</span>` : ''}
-                                ${service.category ? `<span class="category">${service.category}</span>` : ''}
-                            </div>
-                            ${service.description ? `<div class="result-item-desc">${service.description}</div>` : ''}
+
+    function closeAddCarModal() {
+        document.getElementById('addCarModal').style.display = 'none';
+    }
+
+    function loadClientCars(clientId) {
+        const carsList = document.getElementById('carsList');
+        carsList.innerHTML = '<div style="padding: 20px; text-align: center;">Загрузка...</div>';
+
+        fetch('get_client_cars.php?client_id=' + clientId)
+            .then(response => response.json())
+            .then(cars => {
+                displayCars(cars);
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки авто:', error);
+                carsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка загрузки</div>';
+            });
+    }
+
+    function displayCars(cars) {
+        const carsList = document.getElementById('carsList');
+        carsList.innerHTML = '';
+        
+        if (cars && cars.length > 0) {
+            cars.forEach(car => {
+                const carElement = document.createElement('div');
+                carElement.className = 'modal-item';
+                carElement.onclick = () => selectCar(car);
+                
+                carElement.innerHTML = `
+                    <div class="modal-item-info">
+                        <h5>${escapeHtml(car.make)} ${escapeHtml(car.model)}</h5>
+                        <div class="modal-item-details">
+                            🚗 ${escapeHtml(car.license_plate)}
+                            ${car.year ? ` | 📅 ${car.year}` : ''}
+                            ${car.vin ? ` | 🔢 ${escapeHtml(car.vin)}` : ''}
                         </div>
-                        <div class="result-item-actions">
-                            <button type="button" class="btn-1c-primary btn-small" 
-                                    onclick="addServiceToOrder(${JSON.stringify(service).replace(/"/g, '&quot;')})">
-                                ➕ Добавить
-                            </button>
+                    </div>
+                    <button type="button" class="btn-1c-primary btn-small" onclick="event.stopPropagation(); selectCar(${JSON.stringify(car).replace(/"/g, '&quot;')})">
+                        Выбрать
+                    </button>
+                `;
+                carsList.appendChild(carElement);
+            });
+        } else {
+            carsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">У клиента нет автомобилей</div>';
+        }
+    }
+
+    function searchCars() {
+        const searchTerm = document.getElementById('carSearch').value.trim();
+        const carsList = document.getElementById('carsList');
+        
+        if (!searchTerm) {
+            loadClientCars(selectedClient.id);
+            return;
+        }
+        
+        carsList.innerHTML = '<div style="padding: 20px; text-align: center;">Поиск...</div>';
+
+        fetch('search_cars.php?license_plate=' + encodeURIComponent(searchTerm))
+            .then(response => response.json())
+            .then(cars => {
+                displayCars(cars);
+            })
+            .catch(error => {
+                console.error('Ошибка поиска авто:', error);
+                carsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка поиска</div>';
+            });
+    }
+
+    function selectCar(car) {
+        selectedCar = car;
+        
+        document.getElementById('selectedCarTitle').textContent = `${car.make} ${car.model}`;
+        document.getElementById('selectedCarDetails').innerHTML = `
+            <div>🚗 ${car.license_plate}</div>
+            <div>📅 ${car.year || 'Год не указан'}</div>
+            <div>🔢 VIN: ${car.vin || 'не указан'}</div>
+        `;
+        document.getElementById('selectedCarId').value = car.id;
+        document.getElementById('selectedCarCard').style.display = 'flex';
+        
+        closeCarModal();
+    }
+
+    function clearCarSelection() {
+        selectedCar = null;
+        document.getElementById('selectedCarCard').style.display = 'none';
+        document.getElementById('selectedCarId').value = '';
+    }
+
+    // ===== ФУНКЦИИ ДЛЯ СТАНДАРТНЫХ УСЛУГ =====
+    function searchServices() {
+        const searchTerm = document.getElementById('serviceQuickSearch').value.trim();
+        
+        if (!searchTerm) {
+            alert('Введите номер или название услуги для поиска');
+            return;
+        }
+        
+        const resultsContainer = document.getElementById('servicesSearchResults');
+        const resultsList = document.getElementById('servicesResultsList');
+        
+        resultsList.innerHTML = '<div style="padding: 20px; text-align: center;">Поиск услуг...</div>';
+        resultsContainer.style.display = 'block';
+        
+        fetch('search_services.php?q=' + encodeURIComponent(searchTerm))
+            .then(response => response.json())
+            .then(services => {
+                displayServicesResults(services);
+            })
+            .catch(error => {
+                console.error('Ошибка поиска услуг:', error);
+                resultsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка поиска услуг</div>';
+            });
+    }
+
+    function displayServicesResults(services) {
+        const resultsList = document.getElementById('servicesResultsList');
+        resultsList.innerHTML = '';
+        
+        if (services && services.length > 0) {
+            services.forEach(service => {
+                const serviceElement = document.createElement('div');
+                serviceElement.className = 'search-result-item';
+                serviceElement.innerHTML = `
+                    <div class="result-item-info">
+                        <div class="result-item-name">${escapeHtml(service.name)}</div>
+                        <div class="result-item-details">
+                            ${service.code ? `<span class="badge">Код: ${escapeHtml(service.code)}</span>` : ''}
+                            ${service.price ? `<span class="price">${formatPrice(service.price)} руб.</span>` : ''}
+                            ${service.category ? `<span class="category">${escapeHtml(service.category)}</span>` : ''}
                         </div>
-                    `;
-                    resultsList.appendChild(serviceElement);
-                });
-            } else {
-                resultsList.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: #666;">
-                        Услуги не найдены по запросу "${searchTerm}"
-                        <br><small>Попробуйте другой номер или название</small>
+                        ${service.description ? `<div class="result-item-desc">${escapeHtml(service.description)}</div>` : ''}
+                    </div>
+                    <div class="result-item-actions">
+                        <button type="button" class="btn-1c-primary btn-small" 
+                                onclick="addServiceToOrder(${JSON.stringify(service).replace(/"/g, '&quot;')})">
+                            ➕ Добавить
+                        </button>
                     </div>
                 `;
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка поиска услуг:', error);
-            resultsList.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Ошибка поиска услуг</div>';
-        });
-}
-
-// Добавление услуги в заказ
-function addServiceToOrder(service) {
-    // Проверяем, нет ли уже такой услуги
-    const existingIndex = selectedServices.findIndex(s => s.id === service.id);
-    
-    if (existingIndex === -1) {
-        service.quantity = 1;
-        selectedServices.push(service);
-        updateSelectedServicesList();
-    } else {
-        selectedServices[existingIndex].quantity += 1;
-        updateSelectedServicesList();
-    }
-    
-    // Очищаем поиск и скрываем результаты
-    document.getElementById('serviceQuickSearch').value = '';
-    hideServicesResults();
-}
-
-// Обновление списка выбранных услуг
-function updateSelectedServicesList() {
-    const container = document.getElementById('selectedServicesCard');
-    const list = document.getElementById('selectedServicesList');
-    const dataField = document.getElementById('selectedServicesData');
-    
-    if (selectedServices.length === 0) {
-        container.style.display = 'none';
-        dataField.value = '';
-        return;
-    }
-    
-    list.innerHTML = '';
-    let totalAmount = 0;
-    
-    selectedServices.forEach((service, index) => {
-        const serviceElement = document.createElement('div');
-        serviceElement.className = 'selected-part-item';
-        serviceElement.innerHTML = `
-            <div class="part-info">
-                <div class="part-name">${service.name}</div>
-                <div class="part-details">
-                    ${service.code ? `<span>Код: ${service.code}</span>` : ''}
-                    ${service.category ? `<span>Категория: ${service.category}</span>` : ''}
-                </div>
-                <div class="part-price">
-                    ${service.price ? `${formatPrice(service.price)} руб. × ${service.quantity} = ${formatPrice(service.price * service.quantity)} руб.` : 'Цена не указана'}
-                </div>
-            </div>
-            <div class="part-actions">
-                <div class="quantity-controls">
-                    <button type="button" class="btn-quantity" onclick="changeServiceQuantity(${index}, -1)">−</button>
-                    <span class="quantity">${service.quantity}</span>
-                    <button type="button" class="btn-quantity" onclick="changeServiceQuantity(${index}, 1)">+</button>
-                </div>
-                <button type="button" class="btn-1c-outline btn-small" onclick="removeService(${index})">
-                    🗑️ Удалить
-                </button>
-            </div>
-        `;
-        list.appendChild(serviceElement);
-        
-        if (service.price) {
-            totalAmount += service.price * service.quantity;
-        }
-    });
-    
-    // Добавляем итого
-    const totalElement = document.createElement('div');
-    totalElement.className = 'parts-total';
-    totalElement.innerHTML = `<strong>Общая стоимость услуг: ${formatPrice(totalAmount)} руб.</strong>`;
-    list.appendChild(totalElement);
-    
-    // Сохраняем данные в скрытое поле
-    dataField.value = JSON.stringify(selectedServices);
-    container.style.display = 'block';
-}
-
-// Изменение количества услуги
-function changeServiceQuantity(index, change) {
-    const newQuantity = selectedServices[index].quantity + change;
-    
-    if (newQuantity < 1) {
-        removeService(index);
-        return;
-    }
-    
-    selectedServices[index].quantity = newQuantity;
-    updateSelectedServicesList();
-}
-
-// Удаление услуги
-function removeService(index) {
-    selectedServices.splice(index, 1);
-    updateSelectedServicesList();
-}
-
-// Скрыть результаты поиска услуг
-function hideServicesResults() {
-    document.getElementById('servicesSearchResults').style.display = 'none';
-}
-
-// Форматирование цены
-function formatPrice(price) {
-    return new Intl.NumberFormat('ru-RU').format(price);
-}
-
-// Поиск услуг при нажатии Enter
-document.getElementById('serviceQuickSearch').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        searchServices();
-    }
-});
-
-// Инициализация
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('description').addEventListener('input', checkFormCompletion);
-    
-    // Обработка выбранного клиента из URL
-    <?php if (isset($_GET['selected_client'])): ?>
-        fetch('get_client_info.php?id=<?= (int)$_GET['selected_client'] ?>')
-            .then(response => response.json())
-            .then(client => {
-                if (client.id) {
-                    selectClient(client);
-                }
+                resultsList.appendChild(serviceElement);
             });
-    <?php endif; ?>
-});
+        } else {
+            resultsList.innerHTML = `
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    Услуги не найдены по запросу "${searchTerm}"
+                    <br><small>Попробуйте другой номер или название</small>
+                </div>
+            `;
+        }
+    }
 
-// Закрытие модалок по клику вне окна
-document.addEventListener('click', function(event) {
-    const modals = ['clientModal', 'addClientModal', 'carModal', 'addCarModal'];
-    
-    modals.forEach(modalId => {
-        const modal = document.getElementById(modalId);
-        if (modal && event.target === modal) {
-            modal.style.display = 'none';
+    function addServiceToOrder(service) {
+        const existingIndex = selectedServices.findIndex(s => s.id === service.id);
+        
+        if (existingIndex === -1) {
+            service.quantity = 1;
+            selectedServices.push(service);
+            updateSelectedServicesList();
+        } else {
+            selectedServices[existingIndex].quantity += 1;
+            updateSelectedServicesList();
+        }
+        
+        document.getElementById('serviceQuickSearch').value = '';
+        hideServicesResults();
+    }
+
+    function updateSelectedServicesList() {
+        const container = document.getElementById('selectedServicesCard');
+        const list = document.getElementById('selectedServicesList');
+        const dataField = document.getElementById('selectedServicesData');
+        
+        if (selectedServices.length === 0) {
+            container.style.display = 'none';
+            dataField.value = '';
+            return;
+        }
+        
+        list.innerHTML = '';
+        let totalAmount = 0;
+        
+        selectedServices.forEach((service, index) => {
+            const serviceElement = document.createElement('div');
+            serviceElement.className = 'selected-part-item';
+            serviceElement.innerHTML = `
+                <div class="part-info">
+                    <div class="part-name">${escapeHtml(service.name)}</div>
+                    <div class="part-details">
+                        ${service.code ? `<span>Код: ${escapeHtml(service.code)}</span>` : ''}
+                        ${service.category ? `<span>Категория: ${escapeHtml(service.category)}</span>` : ''}
+                    </div>
+                    <div class="part-price">
+                        ${service.price ? `${formatPrice(service.price)} руб. × ${service.quantity} = ${formatPrice(service.price * service.quantity)} руб.` : 'Цена не указана'}
+                    </div>
+                </div>
+                <div class="part-actions">
+                    <div class="quantity-controls">
+                        <button type="button" class="btn-quantity" onclick="changeServiceQuantity(${index}, -1)">−</button>
+                        <span class="quantity">${service.quantity}</span>
+                        <button type="button" class="btn-quantity" onclick="changeServiceQuantity(${index}, 1)">+</button>
+                    </div>
+                    <button type="button" class="btn-1c-outline btn-small" onclick="removeService(${index})">
+                        🗑️ Удалить
+                    </button>
+                </div>
+            `;
+            list.appendChild(serviceElement);
+            
+            if (service.price) {
+                totalAmount += service.price * service.quantity;
+            }
+        });
+        
+        const totalElement = document.createElement('div');
+        totalElement.className = 'parts-total';
+        totalElement.innerHTML = `<strong>Общая стоимость услуг: ${formatPrice(totalAmount)} руб.</strong>`;
+        list.appendChild(totalElement);
+        
+        dataField.value = JSON.stringify(selectedServices);
+        container.style.display = 'block';
+    }
+
+    function changeServiceQuantity(index, change) {
+        const newQuantity = selectedServices[index].quantity + change;
+        
+        if (newQuantity < 1) {
+            removeService(index);
+            return;
+        }
+        
+        selectedServices[index].quantity = newQuantity;
+        updateSelectedServicesList();
+    }
+
+    function removeService(index) {
+        selectedServices.splice(index, 1);
+        updateSelectedServicesList();
+    }
+
+    function hideServicesResults() {
+        document.getElementById('servicesSearchResults').style.display = 'none';
+    }
+
+    function formatPrice(price) {
+        return new Intl.NumberFormat('ru-RU').format(price);
+    }
+
+    // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;', 
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    // ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
+    document.getElementById('serviceQuickSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchServices();
         }
     });
-});
 
-// Закрытие модалок по ESC
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
+    // Закрытие модалок по клику вне окна
+    document.addEventListener('click', function(event) {
         const modals = ['clientModal', 'addClientModal', 'carModal', 'addCarModal'];
+        
         modals.forEach(modalId => {
             const modal = document.getElementById(modalId);
-            if (modal && modal.style.display === 'block') {
+            if (modal && event.target === modal) {
                 modal.style.display = 'none';
             }
         });
-    }
-});
-</script>
-    <style>
-    .selected-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        border: 2px solid #28a745;
-        border-radius: 8px;
-        background: #f8fff9;
-        margin-top: 15px;
-    }
+    });
 
-    .selected-card-content h5 {
-        margin: 0 0 10px 0;
-        color: #2E7D32;
-    }
+    // Закрытие модалок по ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modals = ['clientModal', 'addClientModal', 'carModal', 'addCarModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal && modal.style.display === 'block') {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    });
 
-    .modal {
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.5);
-    }
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('noItems').style.display = '';
+        
+        <?php if (isset($_GET['selected_client'])): ?>
+            fetch('get_client_info.php?id=<?= (int)$_GET['selected_client'] ?>')
+                .then(response => response.json())
+                .then(client => {
+                    if (client && client.id) {
+                        selectClient(client);
+                    }
+                });
+        <?php endif; ?>
+    });
+    </script>
 
-    .modal-content {
-        background-color: white;
-        margin: 5% auto;
-        padding: 0;
-        border-radius: 8px;
-        width: 600px;
-        max-width: 90%;
-        max-height: 80vh;
-        overflow-y: auto;
-    }
-
-    .modal-header {
-        padding: 15px 20px;
-        border-bottom: 1px solid #ddd;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .modal-header h3 {
-        margin: 0;
-    }
-
-    .close {
-        font-size: 24px;
-        cursor: pointer;
-    }
-
-    .modal-body {
-        padding: 20px;
-    }
-
-    .modal-list {
-        max-height: 400px;
-        overflow-y: auto;
-        margin-top: 15px;
-    }
-
-    .modal-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px;
-        border: 1px solid #eee;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-
-    .modal-item:hover {
-        background-color:
-		    .modal-item:hover {
-        background-color: #f8f9fa;
-    }
-
-    .modal-item-info {
-        flex: 1;
-    }
-
-    .modal-item-info h5 {
-        margin: 0 0 5px 0;
-    }
-
-    .modal-item-details {
-        font-size: 12px;
-        color: #666;
-    }
-
-    /* Стили для поиска услуг */
-    .search-results {
-        border: 1px solid #e6d8a8;
-        border-radius: 6px;
-        margin-top: 10px;
-        background: #fffef5;
-    }
-
-    .search-results-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px;
-        border-bottom: 1px solid #e6d8a8;
-        background: #fff8dc;
-    }
-
-    .search-results-list {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    .search-result-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 15px;
-        border-bottom: 1px solid #f5f0d8;
-    }
-
-    .search-result-item:hover {
-        background: #fcf5d9;
-    }
-
-    .result-item-info {
-        flex: 1;
-    }
-
-    .result-item-name {
-        font-weight: 600;
-        color: #5c4a00;
-        margin-bottom: 5px;
-    }
-
-    .result-item-details {
-        display: flex;
-        gap: 10px;
-        font-size: 0.8rem;
-        color: #8b6914;
-        margin-bottom: 5px;
-    }
-
-    .result-item-desc {
-        font-size: 0.8rem;
-        color: #8b6914;
-        font-style: italic;
-    }
-
-    .badge {
-        background: #e6d8a8;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 0.7rem;
-    }
-
-    .price {
-        color: #28a745;
-        font-weight: 600;
-    }
-
-    .selected-parts-card {
-        border: 2px solid #28a745;
-        border-radius: 8px;
-        background: #f8fff9;
-        margin-top: 15px;
-        padding: 0;
-    }
-
-    .selected-parts-header {
-        padding: 15px;
-        border-bottom: 1px solid #e6d8a8;
-        background: #fff8dc;
-    }
-
-    .selected-parts-header h5 {
-        margin: 0;
-        color: #2E7D32;
-    }
-
-    .selected-parts-list {
-        padding: 15px;
-    }
-
-    .selected-part-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px;
-        border: 1px solid #e6d8a8;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        background: white;
-    }
-
-    .part-info {
-        flex: 1;
-    }
-
-    .part-name {
-        font-weight: 600;
-        color: #5c4a00;
-        margin-bottom: 5px;
-    }
-
-    .part-details {
-        font-size: 0.8rem;
-        color: #8b6914;
-        margin-bottom: 5px;
-    }
-
-    .part-price {
-        font-weight: 600;
-        color: #28a745;
-    }
-
-    .part-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .quantity-controls {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .btn-quantity {
-        width: 25px;
-        height: 25px;
-        border: 1px solid #d4c49e;
-        background: white;
-        cursor: pointer;
-        border-radius: 3px;
-    }
-
-    .btn-quantity:hover {
-        background: #f5e8b0;
-    }
-
-    .quantity {
-        padding: 0 8px;
-        font-weight: 600;
-    }
-
-    .parts-total {
-        padding: 15px;
-        border-top: 2px solid #e6d8a8;
-        text-align: right;
-        background: #fff8dc;
-        margin-top: 10px;
-    }
-    </style>
-<?php include 'templates/footer.php'; ?>
+    <?php include 'templates/footer.php'; ?>
 </body>
 </html>

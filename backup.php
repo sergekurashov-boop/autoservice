@@ -185,7 +185,7 @@ if (isset($_POST['create_system_backup'])) {
     
     if (!empty($results)) {
         $_SESSION['success'] = "✅ Полный бэкап создан!<br>" . implode("<br>", $results);
-        $logger->logCreate('backup_full', 0);
+        
     } else {
         $_SESSION['error'] = "❌ Ошибка создания полного бэкапа";
     }
