@@ -2,7 +2,6 @@
 session_start();
 require 'includes/db.php';
 require_once 'auth_check.php';
-//requireAuth();
 
 
 // Параметры фильтрации
@@ -22,21 +21,36 @@ if (!empty($status_filter)) {
     $param_types .= 's';
 }
 
+// Добавляем поиск по ID заказа если есть
+if (!empty($search_query) && is_numeric($search_query)) {
+    $where_conditions[] = "o.id = ?";
+    $params[] = (int)$search_query;
+    $param_types .= 'i';
+}
+
 $where_sql = '';
 if (!empty($where_conditions)) {
     $where_sql = "WHERE " . implode(" AND ", $where_conditions);
 }
 
+<<<<<<< Updated upstream
 // Простой запрос заказов
+=======
+// Исправленный запрос заказов - получаем услуги из JSON
+>>>>>>> Stashed changes
 $orders_sql = "
-    SELECT o.id, o.created, o.description, o.status, o.total, 
+    SELECT o.id, o.created, o.description, o.status, o.total, o.services_data,
            c.make, c.model, c.license_plate,
            cl.name AS client_name, cl.phone as client_phone
     FROM orders o
     JOIN cars c ON o.car_id = c.id
     JOIN clients cl ON c.client_id = cl.id
     $where_sql
+<<<<<<< Updated upstream
     ORDER BY o.created DESC
+=======
+    ORDER BY o.id DESC
+>>>>>>> Stashed changes
     LIMIT 50
 ";
 
@@ -47,6 +61,21 @@ if (!empty($params)) {
 $stmt->execute();
 $orders_result = $stmt->get_result();
 $orders = $orders_result->fetch_all(MYSQLI_ASSOC);
+
+// Обрабатываем JSON данные для отображения услуг
+foreach ($orders as &$order) {
+    $services_list = [];
+    if (!empty($order['services_data']) && $order['services_data'] != 'null') {
+        $services = json_decode($order['services_data'], true);
+        if (is_array($services)) {
+            foreach ($services as $service) {
+                $services_list[] = $service['name'];
+            }
+        }
+    }
+    $order['services_list'] = implode(', ', $services_list);
+}
+unset($order); // важно разорвать ссылку
 
 // Простая статистика
 $stats_sql = "SELECT COUNT(*) as total_orders FROM orders o $where_sql";
@@ -75,10 +104,10 @@ include 'templates/header.php';
             <a href="create_order.php" class="btn-1c-primary">+ Новый заказ</a>
         </div>
 
-        <!-- Простые фильтры -->
+        <!-- Расширенные фильтры -->
         <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
             <form method="get">
-                <div style="display: flex; gap: 15px; align-items: end;">
+                <div style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
                     <div>
                         <label style="display: block; margin-bottom: 5px;">Статус</label>
                         <select name="status" class="form-control" onchange="this.form.submit()">
@@ -88,6 +117,10 @@ include 'templates/header.php';
                             <option value="Готов" <?= $status_filter == 'Готов' ? 'selected' : '' ?>>Готов</option>
                             <option value="Выдан" <?= $status_filter == 'Выдан' ? 'selected' : '' ?>>Выдан</option>
                         </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px;">Поиск по №</label>
+                        <input type="text" name="search" class="form-control" placeholder="№ заказа" value="<?= htmlspecialchars($search_query) ?>">
                     </div>
                     <div>
                         <button type="submit" class="btn-1c-primary">Применить</button>
@@ -202,5 +235,6 @@ include 'templates/header.php';
             .catch(err => console.log('Log error:', err));
     }
     </script>
+	
 </body>
 </html>

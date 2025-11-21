@@ -1,5 +1,5 @@
 <?php
-// admin/backup.php - УМНАЯ ВЕРСИЯ
+// backup.php - ИСПРАВЛЕННАЯ ВЕРСИЯ ДЛЯ КОРНЯ ПРОЕКТА
 session_start();
 require 'includes/db.php';
 require_once 'auth_check.php';
@@ -49,63 +49,106 @@ function createBackupPHP($conn) {
 
 function backupConfigFiles($backup_name) {
     $backup_dir = 'backup/';
+    
+    // Создаем папку backup если её нет
+    if (!is_dir($backup_dir)) {
+        mkdir($backup_dir, 0755, true);
+    }
+    
     $zip_path = $backup_dir . $backup_name . '_files.zip';
     
     if (!class_exists('ZipArchive')) {
-        return null;
+        return "❌ Класс ZipArchive не доступен";
     }
     
     $zip = new ZipArchive();
     if ($zip->open($zip_path, ZipArchive::CREATE) !== TRUE) {
-        return null;
+        return "❌ Не могу создать ZIP архив";
     }
     
-    // Критически важные файлы для бэкапа
-    $important_files = [
-        'includes/db.php',
-        'includes/config.php', 
-        'templates/header.php',
-        'templates/footer.php',
-        'templates/sidebar.php',
-        'assets/css/style.css',
-        '.htaccess',
-        'index.php'
+    // ТЕПЕРЬ МЫ В КОРНЕ - бэкапим текущую папку (autoservice)
+    $project_root = __DIR__;
+    
+    error_log("Backing up PROJECT ROOT: " . $project_root);
+    error_log("Backup path: " . $zip_path);
+
+    // Исключаемые папки и файлы
+    $excluded = [
+        'backup',           // папка с бэкапами
+        'node_modules',     // зависимости npm
+        'vendor',           // зависимости composer
+        '.git',             // git папка
+        '.vscode',          // настройки редактора
+        'tmp',
+        'temp',
+        'logs',
+        'cache'
     ];
     
-    foreach ($important_files as $file) {
-        if (file_exists($file)) {
-            $zip->addFile($file);
-        }
-    }
-    
-    // Добавляем папки рекурсивно
-    $folders = ['includes', 'templates', 'assets/css', 'admin'];
-    foreach ($folders as $folder) {
-        if (is_dir($folder)) {
-            addFolderToZip($zip, $folder);
-        }
-    }
+    // Рекурсивно добавляем файлы из КОРНЯ ПРОЕКТА
+    $files_added = addProjectToZip($zip, $project_root, $excluded);
     
     $zip->close();
-    return file_exists($zip_path) ? $zip_path : null;
+    
+    error_log("Files added to zip: " . $files_added);
+    
+    if ($files_added > 0 && file_exists($zip_path)) {
+        return $zip_path;
+    } else {
+        return "❌ Не удалось добавить файлы в архив (добавлено: $files_added)";
+    }
 }
 
-function addFolderToZip($zip, $folder, $parent = '') {
+function addProjectToZip($zip, $folder, $excluded, $parent = '') {
+    $files_added = 0;
+    
+    // Проверяем существует ли папка
+    if (!is_dir($folder)) {
+        error_log("Directory does not exist: $folder");
+        return 0;
+    }
+    
     $handle = opendir($folder);
+    if (!$handle) {
+        error_log("Cannot open directory: $folder");
+        return 0;
+    }
+    
     while (false !== ($file = readdir($handle))) {
         if ($file != '.' && $file != '..') {
-            $filepath = $folder . '/' . $file;
+            $filepath = $folder . DIRECTORY_SEPARATOR . $file;
             $localpath = $parent . $file;
             
+            // Пропускаем исключенные папки
+            if (in_array($file, $excluded)) {
+                error_log("Skipping excluded: $file");
+                continue;
+            }
+            
             if (is_file($filepath)) {
-                $zip->addFile($filepath, $localpath);
+                // Пропускаем слишком большие файлы (>10MB)
+                if (filesize($filepath) > 10 * 1024 * 1024) {
+                    error_log("Skipping large file: $filepath");
+                    continue;
+                }
+                
+                if ($zip->addFile($filepath, $localpath)) {
+                    $files_added++;
+                    error_log("Added file: $localpath");
+                } else {
+                    error_log("Failed to add file: $localpath");
+                }
+                
             } elseif (is_dir($filepath)) {
-                $zip->addEmptyDir($localpath);
-                addFolderToZip($zip, $filepath, $localpath . '/');
+                if ($zip->addEmptyDir($localpath)) {
+                    error_log("Added directory: $localpath");
+                }
+                $files_added += addProjectToZip($zip, $filepath, $excluded, $localpath . '/');
             }
         }
     }
     closedir($handle);
+    return $files_added;
 }
 
 function getBackupSize($filepath) {
@@ -127,7 +170,7 @@ if (isset($_GET['delete'])) {
     
     if (file_exists($filepath) && unlink($filepath)) {
         $_SESSION['success'] = "✅ Бэкап удален: " . $filename;
-        $logger->logDelete('backup', 0);
+        if (isset($logger)) $logger->logDelete('backup', 0);
     } else {
         $_SESSION['error'] = "❌ Ошибка удаления бэкапа";
     }
@@ -149,7 +192,7 @@ if (isset($_POST['create_backup'])) {
     
     if (file_put_contents($backup_file, $sql_content) !== false) {
         $_SESSION['success'] = "✅ Бэкап БД создан: " . basename($backup_file);
-        $logger->logCreate('backup', 0);
+        if (isset($logger)) $logger->logCreate('backup', 0);
     } else {
         $_SESSION['error'] = "❌ Ошибка создания бэкапа БД";
     }
@@ -177,10 +220,20 @@ if (isset($_POST['create_system_backup'])) {
         $results[] = "БД: " . basename($db_file);
     }
     
-    // 2. Бэкап файловой системы
+    // 2. Бэкап файловой системы (ТОЛЬКО КОРЕНЬ AUTOSERVICE)
     $files_zip = backupConfigFiles($backup_name);
-    if ($files_zip) {
-        $results[] = "Файлы: " . basename($files_zip);
+    
+    // Отладочный вывод
+    error_log("Backup result: " . (is_string($files_zip) ? $files_zip : "File: " . $files_zip));
+
+    if (is_string($files_zip) && strpos($files_zip, '❌') === 0) {
+        // Это сообщение об ошибке
+        $results[] = "Файлы: ОШИБКА - " . $files_zip;
+    } elseif (file_exists($files_zip)) {
+        // Это путь к файлу
+        $results[] = "Файлы: " . basename($files_zip) . " (" . getBackupSize($files_zip) . ")";
+    } else {
+        $results[] = "Файлы: Неизвестная ошибка";
     }
     
     if (!empty($results)) {
@@ -226,7 +279,7 @@ if (isset($_POST['restore_backup']) && isset($_FILES['backup_file'])) {
         
         if ($error_count === 0) {
             $_SESSION['success'] = "✅ Система восстановлена! Выполнено запросов: $success_count";
-            $logger->logUpdate('system_restore', 0);
+            if (isset($logger)) $logger->logUpdate('system_restore', 0);
         } else {
             $_SESSION['error'] = "⚠️ Восстановление с ошибками. Успешно: $success_count, Ошибок: $error_count";
         }
@@ -275,7 +328,7 @@ ob_end_flush();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Резервные копии</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="admin/assets/css/style.css">
     <style>
         body { font-family: Arial; margin: 20px; background: #f5f5f5; }
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
@@ -336,7 +389,7 @@ ob_end_flush();
                 
                 <div style="flex: 1; min-width: 300px;">
                     <h4>Полный системный бэкап</h4>
-                    <p>БД + все файлы системы</p>
+                    <p>БД + файлы autoservice</p>
                     <form method="post">
                         <button type="submit" name="create_system_backup" class="btn btn-info">
                             🗃️ Полный бэкап системы

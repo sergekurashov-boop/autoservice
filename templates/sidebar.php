@@ -28,19 +28,13 @@
                 <a href="create_order.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'create_order.php' ? 'active' : '' ?>">
                     ➕ Новый заказ
                 </a>
-                <a href="orders.php?status=active" class="sidebar-subitem-1c">
-                    🔧 В работе
-                </a>
-                <a href="orders.php?status=completed" class="sidebar-subitem-1c">
-                    ✅ Выполненные
-                </a>
-				 <a href="booking.php?status=completed" class="sidebar-subitem-1c">
-                📅Запись на обслуживание
-        </a>
-                <!-- Будет добавляться позже -->
-                <a href="inspection.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'inspection.php' ? 'active' : '' ?>" style="display: none;">
+               <a href="inspection.php" class="sidebar-subitem-1c ">
                     🔍 Осмотр авто
                 </a>
+                				 <a href="booking.php?status=completed" class="sidebar-subitem-1c">
+                📅Запись на обслуживание
+        </a>
+                
             </div>
         </div>
 
@@ -130,35 +124,6 @@
             <span class="sidebar-icon-1c">📈</span>
             <span class="menu-text">Отчеты</span>
         </a>
-
-        <!-- 🔹 АККОРДЕОН ПОМОЩЬ -->
-        <div class="accordion-1c">
-            <div class="accordion-header-1c" data-accordion="help">
-                <span class="sidebar-icon-1c">❓</span>
-                <span class="menu-text">Помощь</span>
-                <span class="accordion-icon-1c">▼</span>
-            </div>
-            <div class="accordion-content-1c" id="help-menu">
-                <a href="help.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help.php' ? 'active' : '' ?>">
-                    📖 Помощь по программе
-                </a>
-                <a href="help_quickstart.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_quickstart.php' ? 'active' : '' ?>">
-                    🚀 Быстрый старт
-                </a>
-                <a href="help_orders.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_orders.php' ? 'active' : '' ?>">
-                    📋 Работа с заказами
-                </a>
-                <a href="help_warehouse.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_warehouse.php' ? 'active' : '' ?>">
-                    🏭 Управление складом
-                </a>
-                <a href="help_reports.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_reports.php' ? 'active' : '' ?>">
-                    📈 Формирование отчетов
-                </a>
-                <a href="help_troubleshooting.php" class="sidebar-subitem-1c <?= basename($_SERVER['PHP_SELF']) == 'help_troubleshooting.php' ? 'active' : '' ?>">
-                    🔧 Решение проблем
-                </a>
-            </div>
-        </div>
 
         <!-- 🔹 АДМИНИСТРИРОВАНИЕ (только для админов) -->
        <?php 

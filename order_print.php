@@ -35,8 +35,11 @@ $result = $stmt->get_result();
 $order = $result->fetch_assoc();
 
 if (!$order) {
-    die("Заказ не найден");
+    die("Заказ #{$order_id} не найден в базе данных");
 }
+
+// Определяем заголовок документа в зависимости от статуса
+$document_title = ($order['status'] != 'Готов') ? 'ПРЕДВАРИТЕЛЬНЫЙ ЗАКАЗ-НАРЯД' : 'ЗАКАЗ-НАРЯД';
 
 // Создаем таблицу company_details если её нет
 $conn->query("
@@ -108,7 +111,7 @@ foreach ($order_parts as $part) {
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Заказ-наряд #<?= $order_id ?></title>
+    <title><?= $document_title ?> #<?= $order['id'] ?></title>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -143,6 +146,12 @@ foreach ($order_parts as $part) {
             font-size: 16px; 
             font-weight: bold;
             margin-bottom: 10px;
+        }
+        .preliminary-notice {
+            color: #d9534f;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
         }
         .section { 
             margin-bottom: 15px;
@@ -306,7 +315,13 @@ foreach ($order_parts as $part) {
             </div>
             <?php endif; ?>
             
-            <div class="document-title">ЗАКАЗ-НАРЯД #<?= $order_id ?></div>
+            <!-- Измененный заголовок документа -->
+            <div class="document-title">
+                <?php if ($order['status'] != 'Готов'): ?>
+                    <div class="preliminary-notice">ПРЕДВАРИТЕЛЬНЫЙ</div>
+                <?php endif; ?>
+                ЗАКАЗ-НАРЯД №<?= $order['id'] ?>
+            </div>
             <div>Дата создания: <?= date('d.m.Y H:i', strtotime($order['created'])) ?></div>
         </div>
 
@@ -492,7 +507,7 @@ foreach ($order_parts as $part) {
             </div>
             
             <div style="margin-bottom: 10px;">
-                Согласие действует до достижения целей обработки персональных данных 
+                Согласие действует до достижения целей обработка персональных данных 
                 или до отзыва согласия. Отзыв согласия осуществляется путем 
                 письменного обращения к оператору.
             </div>
@@ -511,7 +526,7 @@ foreach ($order_parts as $part) {
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
                 <div>
-                    <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">
+                    <div style="border-top: 1px solid №000; margin-top: 40px; padding-top: 5px;">
                         <div class="text-center">(подпись клиента)</div>
                         <div class="text-center" style="font-size: 9px; margin-top: 5px;">
                             <?= htmlspecialchars($order['client_name']) ?>
@@ -519,7 +534,7 @@ foreach ($order_parts as $part) {
                     </div>
                 </div>
                 <div>
-                    <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">
+                    <div style="border-top: 1px solid №000; margin-top: 40px; padding-top: 5px;">
                         <div class="text-center">(дата)</div>
                         <div class="text-center" style="font-size: 9px; margin-top: 5px;">
                             <?= date('d.m.Y') ?>
@@ -530,7 +545,7 @@ foreach ($order_parts as $part) {
         </div>
 
         <!-- Политика конфиденциальности -->
-        <div class="footer" style="font-size: 9px; color: #666;">
+        <div class="footer" style="font-size: 9px; color: №666;">
             <div><strong>Информация о защите персональных данных:</strong></div>
             <div>
                 Ваши персональные данные защищены в соответствии с ФЗ-152 "О персональных данных". 

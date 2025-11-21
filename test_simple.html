@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестирование системы осмотров - Autoservice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .links-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .link-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            display: block;
+        }
+        .link-card:hover {
+            background: #e3f2fd;
+            transform: translateY(-2px);
+        }
+        .link-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #007bff;
+        }
+        .link-desc {
+            font-size: 12px;
+            color: #666;
+        }
+        .section-title {
+            color: #333;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Тестирование системы осмотров</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Внимание:</strong> Это упрощенная версия для тестирования. Для полной функциональности используйте PHP версию.
+        </div>
+
+        <h2 class="section-title">🚀 Основные файлы</h2>
+        <div class="links-grid">
+            <a href="inspection_request.php" class="link-card">
+                <div class="link-title">➕ Создать задание на осмотр</div>
+                <div class="link-desc">Первичный документ с жалобами клиента</div>
+            </a>
+            
+            <a href="inspection_requests_list.php" class="link-card">
+                <div class="link-title">📋 Список заданий</div>
+                <div class="link-desc">Все созданные задания с статусами</div>
+            </a>
+            
+            <a href="inspection_create.php?request_id=1" class="link-card">
+                <div class="link-title">📝 Создать акт осмотра</div>
+                <div class="link-desc">Акт на основе задания (ID=1 для теста)</div>
+            </a>
+            
+            <a href="inspection.php" class="link-card">
+                <div class="link-title">🛠️ Старый inspection.php</div>
+                <div class="link-desc">Оригинальный файл для сравнения</div>
+            </a>
+        </div>
+
+        <h2 class="section-title">🔧 Дополнительные файлы</h2>
+        <div class="links-grid">
+            <a href="inspection_request_view.php?id=1" class="link-card">
+                <div class="link-title">👁️ Просмотр задания</div>
+                <div class="link-desc">Детальный просмотр задания (ID=1 для теста)</div>
+            </a>
+            
+            <a href="orders.php" class="link-card">
+                <div class="link-title">📄 Список заказов</div>
+                <div class="link-desc">Для тестирования связи с заказами</div>
+            </a>
+            
+            <a href="preliminary_order.php" class="link-card">
+                <div class="link-title">💰 Предварительный заказ</div>
+                <div class="link-desc">Создание заказа-наряда</div>
+            </a>
+            
+            <a href="tasks_list.php" class="link-card">
+                <div class="link-title">👨‍🔧 Задания механикам</div>
+                <div class="link-desc">Список рабочих заданий</div>
+            </a>
+        </div>
+
+        <div style="margin-top: 30px; padding: 15px; background: #d4edda; border-radius: 5px; border-left: 4px solid #28a745;">
+            <strong>📝 Рекомендуемый порядок:</strong><br>
+            1. inspection_request.php → 2. inspection_requests_list.php → 3. inspection_create.php
+        </div>
+    </div>
+</body>
+</html>
